@@ -82,6 +82,8 @@ Now when you call `Chasqui.publish 'event.name', data, ...`, Chasqui will publis
 
 ## Subscribing to events
 
+__NOT IMPLMENTED YET__
+
 ```rb
 # file: otherapp/app/subscribers/user_events.rb
 Chasqui.subscribe queue: 'unique_queue_name_for_app', namespace: 'com.example.myapp' do
