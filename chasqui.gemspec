@@ -7,10 +7,9 @@ Gem::Specification.new do |spec|
   spec.name          = "chasqui"
   spec.version       = Chasqui::VERSION
   spec.authors       = ["Jordan Bach"]
-  spec.email         = ["jordanbach@gmail.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
-  spec.homepage      = ""
+  spec.email         = ["jordan@opensolitude.com"]
+  spec.summary       = %q{Chasqui is a simple, lightweight, persistent implementation of the publish-subscribe (pub/sub) messaging pattern for service oriented architectures.}
+  spec.homepage      = "https://github.com/jbgo/chasqui"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
