@@ -1,8 +1,9 @@
-require 'ostruct'
 require 'json'
-require "chasqui/version"
 require 'redis'
 require 'redis-namespace'
+
+require "chasqui/version"
+require "chasqui/subscriber"
 
 module Chasqui
 
@@ -47,6 +48,27 @@ module Chasqui
     def publish(event, *args)
       name = namespace ? "#{namespace}.#{event}" : event
       redis.rpush publish_queue, { name: name, data: args }.to_json
+    end
+
+    def subscribe(queue:, namespace:, &block)
+      register_subscriber(queue, namespace).tap do |sub|
+        sub.evaluate(&block) if block_given?
+        redis.sadd "queues:#{namespace}", queue
+      end
+    end
+
+    def subscriber(queue)
+      subscribers[queue.to_s]
+    end
+
+    private
+
+    def register_subscriber(queue, namespace)
+      subscribers[queue.to_s] ||= Subscriber.new
+    end
+
+    def subscribers
+      @subscribers ||= {}
     end
   end
 

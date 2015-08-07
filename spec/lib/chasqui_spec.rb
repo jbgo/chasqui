@@ -71,6 +71,36 @@ describe Chasqui do
     end
   end
 
+  describe '.subscribe' do
+    it 'saves subscriptions' do
+      sub1 = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.admin'
+      sub2 = Chasqui.subscribe queue: 'app2-queue', namespace: 'com.example.admin'
+      sub3 = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.video'
+
+      queues = Chasqui.redis.smembers "queues:com.example.admin"
+      expect(queues.sort).to eq(['app1-queue', 'app2-queue'])
+
+      queues = Chasqui.redis.smembers "queues:com.example.video"
+      expect(queues).to eq(['app1-queue'])
+
+      expect(Chasqui.subscriber('app1-queue')).to eq(sub1)
+      expect(Chasqui.subscriber('app2-queue')).to eq(sub2)
+      expect(sub1).to eq(sub3)
+    end
+
+    it 'returns a subscriber' do
+      subscriber = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.admin'
+      expect(subscriber).to be_kind_of(Chasqui::Subscriber)
+    end
+
+    it 'yields a subscriber configuration context' do
+      Chasqui.subscribe queue: 'foo', namespace: 'bar' do
+        $context = self
+      end
+      expect($context).to be_kind_of(Chasqui::Subscriber)
+    end
+  end
+
   private
 
   def reset_config
