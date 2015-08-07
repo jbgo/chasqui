@@ -40,10 +40,7 @@ describe Chasqui do
   end
 
   describe '.publish' do
-    before do
-      reset_config
-      flush_redis
-    end
+    before { reset_chasqui }
 
     it 'pushes messages to the inbox queue' do
       payloads = [
@@ -72,6 +69,8 @@ describe Chasqui do
   end
 
   describe '.subscribe' do
+    before { reset_chasqui }
+
     it 'saves subscriptions' do
       sub1 = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.admin'
       sub2 = Chasqui.subscribe queue: 'app2-queue', namespace: 'com.example.admin'
@@ -94,6 +93,7 @@ describe Chasqui do
     end
 
     it 'yields a subscriber configuration context' do
+      $context = nil
       Chasqui.subscribe queue: 'foo', namespace: 'bar' do
         $context = self
       end
@@ -102,6 +102,11 @@ describe Chasqui do
   end
 
   private
+
+  def reset_chasqui
+    reset_config
+    flush_redis
+  end
 
   def reset_config
     Chasqui.instance_variable_set(:@config, nil)
