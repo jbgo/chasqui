@@ -1,9 +1,17 @@
 module Chasqui
+
+  HandlerAlreadyRegistered = Class.new StandardError
+
   class Subscriber
 
     def on(event_name, &block)
       @handlers ||= {}
-      @handlers[event_name] = block
+
+      if @handlers.key? event_name
+        raise HandlerAlreadyRegistered.new "handler already registered for event: #{event_name}"
+      else
+        @handlers[event_name] = block
+      end
     end
 
     def handlers_for(event_name)

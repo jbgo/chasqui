@@ -15,6 +15,13 @@ describe Chasqui::Subscriber do
       handler = subscriber.handlers_for('zig.zag').first
       expect(handler.call(1, 2, 3, 4)).to eq([1, 2, 3, 4])
     end
+
+    it 'raises when registering duplicate handlers' do
+      subscriber.on('foo') { |foo| foo }
+      expect(-> {
+        subscriber.on('foo') { |a, b| a + b }
+      }).to raise_error(Chasqui::HandlerAlreadyRegistered)
+    end
   end
 
   describe '#handlers_for' do
