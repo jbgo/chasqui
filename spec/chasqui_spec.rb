@@ -9,7 +9,7 @@ describe Chasqui do
     before { reset_config }
 
     context 'defaults' do
-      it { expect(Chasqui.namespace).to be_nil }
+      it { expect(Chasqui.namespace).to be nil }
       it { expect(Chasqui.publish_queue).to eq('chasqui.inbox') }
     end
 
