@@ -4,37 +4,43 @@ require 'redis-namespace'
 
 require "chasqui/version"
 require "chasqui/subscriber"
+require "chasqui/broker"
 
 module Chasqui
 
   Defaults = {
-    publish_queue: 'inbox',
-    redis_namespace: 'chasqui'
+    inbox_queue: 'inbox',
+    redis_namespace: 'chasqui',
+    publish_namespace: '__default'
   }.freeze
 
   class Config < Struct.new :namespace, :redis
-    def redis=(redis_config)
-      client = redis_config.kind_of?(Redis) ? redis_config : Redis.new(redis_config)
-      self[:redis] = Redis::Namespace.new(Defaults[:redis_namespace], redis: client)
-    end
-  end
-
-  module ClassMethods
     def namespace
-      config.namespace
+      self[:namespace] ||= Defaults.fetch(:publish_namespace)
     end
 
     def redis
-      unless config.redis
-        config.redis = Redis.new
+      unless self[:redis]
+        self.redis = Redis.new
       end
 
-      config.redis
+      self[:redis]
     end
 
-    def publish_queue
-      Defaults[:publish_queue]
+    def redis=(redis_config)
+      client = redis_config.kind_of?(Redis) ? redis_config : Redis.new(redis_config)
+      self[:redis] = Redis::Namespace.new(Defaults.fetch(:redis_namespace), redis: client)
     end
+
+    def inbox_queue
+      Defaults.fetch(:inbox_queue)
+    end
+    alias inbox inbox_queue
+  end
+
+  module ClassMethods
+    extend Forwardable
+    def_delegators :config, :redis, :namespace, :inbox, :inbox_queue
 
     def configure(&block)
       @config ||= Config.new
@@ -46,8 +52,8 @@ module Chasqui
     end
 
     def publish(event, *args)
-      name = namespace ? "#{namespace}.#{event}" : event
-      redis.rpush publish_queue, { name: name, data: args }.to_json
+      payload = { event: event, namespace: namespace, data: args }
+      redis.lpush inbox_queue, payload.to_json
     end
 
     def subscribe(queue:, namespace:, &block)

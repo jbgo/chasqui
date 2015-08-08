@@ -9,8 +9,8 @@ describe Chasqui do
     before { reset_config }
 
     context 'defaults' do
-      it { expect(Chasqui.namespace).to be nil }
-      it { expect(Chasqui.publish_queue).to eq('inbox') }
+      it { expect(Chasqui.namespace).to eq('__default') }
+      it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
     end
 
@@ -53,17 +53,19 @@ describe Chasqui do
       end
 
       payloads.each do |data|
-        event = JSON.load Chasqui.redis.lpop('inbox')
-        expect(event['name']).to eq('test.event')
+        event = JSON.load Chasqui.redis.rpop('inbox')
+        expect(event['event']).to eq('test.event')
+        expect(event['namespace']).to eq('__default')
         expect(event['data']).to eq(data)
       end
     end
 
     it 'supports namespaces' do
-      Chasqui.configure { |config| config.namespace = 'my.app' }
+      Chasqui.config.namespace = 'my.app'
       Chasqui.publish 'test.event', :foo
-      event = JSON.load Chasqui.redis.lpop('inbox')
-      expect(event['name']).to eq('my.app.test.event')
+      event = JSON.load Chasqui.redis.rpop('inbox')
+      expect(event['event']).to eq('test.event')
+      expect(event['namespace']).to eq('my.app')
       expect(event['data']).to eq(['foo'])
     end
   end
@@ -100,20 +102,4 @@ describe Chasqui do
       expect($context).to be_kind_of(Chasqui::Subscriber)
     end
   end
-
-  private
-
-  def reset_chasqui
-    reset_config
-    flush_redis
-  end
-
-  def reset_config
-    Chasqui.instance_variable_set(:@config, nil)
-  end
-
-  def flush_redis
-    Chasqui.redis.keys('*').each { |k| Chasqui.redis.del k }
-  end
-
 end
