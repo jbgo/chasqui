@@ -37,28 +37,27 @@ describe Chasqui::Subscriber do
       expect(subscriber.handlers_for('foo')).to eq([p])
     end
 
-    it 'matches wildcard postfixes' do
-      p = 3.times.map { Proc.new { } }
-      subscriber.on('foo', &p[0])
+    it 'matches wildcards' do
+      p = 6.times.map { Proc.new { } }
+      subscriber.on('foo*', &p[0])
       subscriber.on('bar', &p[1])
-      subscriber.on('foo.bar', &p[2])
-      expect(subscriber.handlers_for('foo*')).to eq([p[0], p[2]])
+      subscriber.on('*bar', &p[2])
+      subscriber.on('*', &p[3])
+      subscriber.on('*a*', &p[4])
+      subscriber.on('*z*', &p[5])
+      expect(subscriber.handlers_for('foo.bar')).to eq([p[0], p[2], p[3], p[4]])
     end
+  end
 
-    it 'matches wildcard prefixes' do
-      p = 3.times.map { Proc.new { } }
-      subscriber.on('foo', &p[0])
-      subscriber.on('bar', &p[1])
-      subscriber.on('foo.bar', &p[2])
-      expect(subscriber.handlers_for('*bar')).to eq([p[1], p[2]])
-    end
+  describe '#perform' do
+    let(:subscriber) { Chasqui::Subscriber.new }
 
-    it 'matches all events' do
-      p = 3.times.map { Proc.new { } }
-      subscriber.on('foo', &p[0])
-      subscriber.on('bar', &p[1])
-      subscriber.on('foo.bar', &p[2])
-      expect(subscriber.handlers_for('*')).to eq([p[0], p[1], p[2]])
+    it 'calls the matching event handlers' do
+      calls = []
+      subscriber.on('foo.bar') { |a, b| calls << a + b }
+      subscriber.on('foo.*') { |a, b| calls << a ** b }
+      subscriber.perform({ 'name' => 'foo.bar', 'data' => [3, 4] })
+      expect(calls.sort).to eq([7, 81])
     end
   end
 

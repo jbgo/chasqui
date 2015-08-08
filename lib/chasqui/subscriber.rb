@@ -5,24 +5,34 @@ module Chasqui
   class Subscriber
 
     def on(event_name, &block)
-      @handlers ||= {}
+      pattern = pattern_for_event event_name 
 
-      if @handlers.key? event_name
+      if handlers.key? pattern
         raise HandlerAlreadyRegistered.new "handler already registered for event: #{event_name}"
       else
-        @handlers[event_name] = block
+        handlers[pattern] = block
+      end
+    end
+
+    def perform(event)
+      handlers_for(event['name']).each do |handler|
+        handler.call *event['data']
       end
     end
 
     def handlers_for(event_name)
-      @handlers ||= {}
-      keys = @handlers.keys.grep(/#{event_name.gsub('*', '.*')}/)
-      keys.map { |k| @handlers[k] }
+      handlers.select { |pattern, handler| pattern =~ event_name }.values
     end
 
     def evaluate(&block)
       @self_before_instance_eval = eval "self", block.binding
       instance_eval &block
+    end
+
+    private
+
+    def handlers
+      @handlers ||= {}
     end
 
     def method_missing(method, *args, &block)
@@ -31,6 +41,10 @@ module Chasqui
       else
         super
       end
+    end
+
+    def pattern_for_event(event_name)
+      /\A#{event_name.to_s.downcase.gsub('*', '.*')}\z/
     end
 
   end
