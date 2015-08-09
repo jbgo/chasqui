@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jbgo/chasqui.svg?branch=master)](https://travis-ci.org/jbgo/chasqui)
+
 # Chasqui
 
 Chasqui is a simple, lightweight, persistent implementation of the publish-subscribe (pub/sub)
