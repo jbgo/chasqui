@@ -12,9 +12,15 @@ describe Chasqui do
       it { expect(Chasqui.namespace).to eq('__default') }
       it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
+      it { expect(Chasqui.logger).to be_kind_of(Logger) }
     end
 
     it 'configures the namespace' do
+      Chasqui.config.namespace = 'com.example.test'
+      expect(Chasqui.namespace).to eq('com.example.test')
+    end
+
+    it 'accepts a block' do
       Chasqui.configure { |config| config.namespace = 'com.example.test' }
       expect(Chasqui.namespace).to eq('com.example.test')
     end
@@ -22,19 +28,41 @@ describe Chasqui do
     context 'redis' do
       it 'accepts config options' do
         redis_config = { host: '10.0.3.24' }
-        Chasqui.configure { |config| config.redis = redis_config }
+        Chasqui.config.redis = redis_config
         expect(Chasqui.redis.client.host).to eq('10.0.3.24')
       end
 
       it 'accepts an initialized client' do
         redis = Redis.new db: 2
-        Chasqui.configure { |config| config.redis = redis }
+        Chasqui.config.redis = redis
         expect(Chasqui.redis.client.db).to eq(2)
       end
 
       it 'uses a namespace' do
         Chasqui.redis.set 'foo', 'bar'
         expect(Chasqui.redis.redis.get 'chasqui:foo').to eq('bar')
+      end
+    end
+
+    describe 'logger' do
+      it 'accepts a log device' do
+        logs = StringIO.new
+        Chasqui.config.logger = logs
+        Chasqui.logger.info "status"
+        Chasqui.logger.warn "error"
+
+        logs.rewind
+        output = logs.read
+
+        %w(INFO status WARN error).each do |text|
+          expect(output).to match(text)
+        end
+      end
+
+      it 'accepts a logger-like object' do
+        fake_logger = FakeLogger.new
+        Chasqui.config.logger = fake_logger
+        expect(Chasqui.logger).to eq(fake_logger)
       end
     end
   end
@@ -101,5 +129,10 @@ describe Chasqui do
       end
       expect($context).to be_kind_of(Chasqui::Subscriber)
     end
+  end
+end
+
+class FakeLogger
+  def info(*args, &block)
   end
 end

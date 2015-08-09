@@ -9,6 +9,7 @@ end
 
 def reset_config
   Chasqui.instance_variable_set(:@config, nil)
+  Chasqui.config.logger = open('/dev/null', 'w+')
 end
 
 def redis

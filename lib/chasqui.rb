@@ -1,4 +1,5 @@
 require 'json'
+require 'logger'
 require 'redis'
 require 'redis-namespace'
 
@@ -14,7 +15,7 @@ module Chasqui
     publish_namespace: '__default'
   }.freeze
 
-  class Config < Struct.new :namespace, :redis
+  class Config < Struct.new :logger, :namespace, :redis
     def namespace
       self[:namespace] ||= Defaults.fetch(:publish_namespace)
     end
@@ -36,11 +37,27 @@ module Chasqui
       Defaults.fetch(:inbox_queue)
     end
     alias inbox inbox_queue
+
+    def logger
+      unless self[:logger]
+        self.logger = Logger.new(STDOUT)
+      end
+
+      self[:logger]
+    end
+
+    def logger=(new_logger)
+      self[:logger] = if new_logger.respond_to? :info
+        new_logger
+      else
+        Logger.new new_logger
+      end
+    end
   end
 
   module ClassMethods
     extend Forwardable
-    def_delegators :config, :redis, :namespace, :inbox, :inbox_queue
+    def_delegators :config, :redis, :namespace, :inbox, :inbox_queue, :logger
 
     def configure(&block)
       @config ||= Config.new
