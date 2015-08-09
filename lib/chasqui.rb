@@ -56,7 +56,10 @@ module Chasqui
       redis.lpush inbox_queue, payload.to_json
     end
 
-    def subscribe(queue:, namespace:, &block)
+    def subscribe(options={}, &block)
+      queue = options.fetch :queue
+      namespace = options.fetch :namespace
+
       register_subscriber(queue, namespace).tap do |sub|
         sub.evaluate(&block) if block_given?
         redis.sadd "queues:#{namespace}", queue
