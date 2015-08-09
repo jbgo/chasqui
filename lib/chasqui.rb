@@ -1,3 +1,4 @@
+require 'forwardable'
 require 'json'
 require 'logger'
 require 'redis'
@@ -15,10 +16,15 @@ module Chasqui
     publish_namespace: '__default'
   }.freeze
 
-  class Config < Struct.new :logger, :namespace, :redis
+  class Config < Struct.new :logger, :namespace, :redis, :inbox_queue
     def namespace
       self[:namespace] ||= Defaults.fetch(:publish_namespace)
     end
+
+    def inbox_queue
+      self[:inbox_queue] ||= Defaults.fetch(:inbox_queue)
+    end
+    alias inbox inbox_queue
 
     def redis
       unless self[:redis]
@@ -29,29 +35,37 @@ module Chasqui
     end
 
     def redis=(redis_config)
-      client = redis_config.kind_of?(Redis) ? redis_config : Redis.new(redis_config)
+      client = case redis_config
+      when Redis
+        redis_config
+      when String
+        Redis.new url: redis_config
+      else
+        Redis.new redis_config
+      end
+
       self[:redis] = Redis::Namespace.new(Defaults.fetch(:redis_namespace), redis: client)
     end
 
-    def inbox_queue
-      Defaults.fetch(:inbox_queue)
-    end
-    alias inbox inbox_queue
-
     def logger
       unless self[:logger]
-        self.logger = Logger.new(STDOUT)
+        self.logger = STDOUT
       end
 
       self[:logger]
     end
 
     def logger=(new_logger)
-      self[:logger] = if new_logger.respond_to? :info
+      lg = if new_logger.respond_to? :info
         new_logger
       else
-        Logger.new new_logger
+        Logger.new(new_logger).tap do |lg|
+          lg.level = Logger::INFO
+        end
       end
+
+      lg.progname = 'chasqui'
+      self[:logger] = lg
     end
   end
 

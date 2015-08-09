@@ -1,0 +1,5 @@
+#!/usr/bin/env chasqui
+
+require_relative '../lib/chasqui/cli'
+
+Chasqui::CLI.new(ARGV).run

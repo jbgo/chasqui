@@ -12,7 +12,15 @@ describe Chasqui do
       it { expect(Chasqui.namespace).to eq('__default') }
       it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
-      it { expect(Chasqui.logger).to be_kind_of(Logger) }
+
+      it do
+        # remove chasqui's test environment logger
+        Chasqui.config[:logger] = nil
+        expect(Chasqui.logger).to be_kind_of(Logger)
+      end
+
+      it { expect(Chasqui.logger.level).to eq(Logger::INFO) }
+      it { expect(Chasqui.logger.progname).to eq('chasqui') }
     end
 
     it 'configures the namespace' do
@@ -23,6 +31,11 @@ describe Chasqui do
     it 'accepts a block' do
       Chasqui.configure { |config| config.namespace = 'com.example.test' }
       expect(Chasqui.namespace).to eq('com.example.test')
+    end
+
+    it 'configures the inbox queue' do
+      Chasqui.config.inbox_queue = 'foo'
+      expect(Chasqui.inbox).to eq('foo')
     end
 
     context 'redis' do
@@ -36,6 +49,11 @@ describe Chasqui do
         redis = Redis.new db: 2
         Chasqui.config.redis = redis
         expect(Chasqui.redis.client.db).to eq(2)
+      end
+
+      it 'accepts URLs' do
+        Chasqui.config.redis = 'redis://10.0.1.21:12345/0'
+        expect(Chasqui.redis.client.host).to eq('10.0.1.21')
       end
 
       it 'uses a namespace' do
@@ -54,7 +72,7 @@ describe Chasqui do
         logs.rewind
         output = logs.read
 
-        %w(INFO status WARN error).each do |text|
+        %w(chasqui INFO status WARN error).each do |text|
           expect(output).to match(text)
         end
       end
@@ -63,6 +81,7 @@ describe Chasqui do
         fake_logger = FakeLogger.new
         Chasqui.config.logger = fake_logger
         expect(Chasqui.logger).to eq(fake_logger)
+        expect(Chasqui.logger.progname).to eq('chasqui')
       end
     end
   end
@@ -133,6 +152,7 @@ describe Chasqui do
 end
 
 class FakeLogger
+  attr_accessor :progname
   def info(*args, &block)
   end
 end
