@@ -4,11 +4,21 @@ class Chasqui::Broker
   extend Forwardable
   def_delegators :@config, :redis, :inbox
 
+  ShutdownSignals = %w(INT QUIT ABRT TERM).freeze
+
   # The broker uses blocking redis commands, so we create a new redis connection
   # for the broker, to prevent unsuspecting clients from blocking forever.
   def initialize
     @config = Chasqui.config.dup
     @config.redis = Redis.new @config.redis.client.options
+  end
+
+  def start
+    ShutdownSignals.each do |signal|
+      trap(signal) { exit 0 }
+    end
+
+    loop { forward_event }
   end
 
   def forward_event

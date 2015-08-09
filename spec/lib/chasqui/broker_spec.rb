@@ -2,12 +2,32 @@ require 'spec_helper'
 
 describe Chasqui::Broker do
   let(:broker) { Chasqui::Broker.new }
-  pending 'it starts'
-  pending 'it stops gracefully'
-  pending 'it responds to signals gracefully'
+  before { reset_chasqui }
 
   it 'forwards events to subscriber queues' do
     expect(-> { broker.forward_event }).to raise_error(NotImplementedError)
+  end
+
+  %w(INT QUIT ABRT TERM).each do |signal|
+    it "forwards events until it receives #{signal}" do
+      pid = fork { Chasqui::MultiBroker.new.start }
+
+      Timeout::timeout(1) do
+        Chasqui.subscribe queue: 'queue1', namespace: 'app1'
+        Chasqui.config.namespace = 'app1'
+        Chasqui.publish 'foo', 'A'
+        Chasqui.publish 'bar', 'B'
+
+        _, event1 = redis.brpop 'queue1'
+        _, event2 = redis.brpop 'queue1'
+        expect(JSON.parse(event1)['event']).to eq('foo')
+        expect(JSON.parse(event2)['event']).to eq('bar')
+
+        Process.kill('INT', pid)
+        _, status = Process.wait2(pid)
+        expect(status.exitstatus).to eq(0)
+      end
+    end
   end
 end
 
@@ -17,7 +37,6 @@ describe Chasqui::MultiBroker do
 
   describe '#forward_event' do
     before do
-      reset_chasqui
       Chasqui.config.namespace = 'app1'
       Chasqui.subscribe queue: 'queue1', namespace: 'app1'
       Chasqui.subscribe queue: 'queue2', namespace: 'app2'
