@@ -13,10 +13,11 @@ module Chasqui
   Defaults = {
     inbox_queue: 'inbox',
     redis_namespace: 'chasqui',
-    publish_namespace: '__default'
+    publish_namespace: '__default',
+    broker_poll_interval: 3
   }.freeze
 
-  class Config < Struct.new :logger, :namespace, :redis, :inbox_queue
+  class Config < Struct.new :logger, :namespace, :redis, :inbox_queue, :broker_poll_interval
     def namespace
       self[:namespace] ||= Defaults.fetch(:publish_namespace)
     end
@@ -66,6 +67,10 @@ module Chasqui
 
       lg.progname = 'chasqui'
       self[:logger] = lg
+    end
+
+    def broker_poll_interval
+      self[:broker_poll_interval] ||= Defaults.fetch(:broker_poll_interval)
     end
   end
 

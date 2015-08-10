@@ -1,3 +1,5 @@
+require 'timeout'
+
 class Chasqui::Broker
   attr_reader :config
 
@@ -15,17 +17,39 @@ class Chasqui::Broker
   end
 
   def start
-    logger.info "waiting for events"
+    @shutdown_requested = nil
 
     ShutdownSignals.each do |signal|
-      trap(signal) { exit 0  }
+      trap(signal) { @shutdown_requested = signal }
     end
 
-    loop { forward_event }
+    catch :shutdown do
+      loop do
+        begin
+          # This timeout is a failsafe for an improperly configured broker
+          Timeout::timeout(config.broker_poll_interval + 1) do
+            if @shutdown_requested
+              logger.info "broker received signal, #@shutdown_requested. shutting down"
+              throw :shutdown
+            else
+              forward_event
+            end
+          end
+        rescue TimeoutError
+          logger.warn "broker poll interval exceeded for broker, #{self.class.name}"
+        end
+      end
+    end
   end
 
   def forward_event
     raise NotImplementedError.new "please define #forward_event in a subclass of #{self.class.name}"
+  end
+
+  class << self
+    def start
+      Chasqui::MultiBroker.new.start
+    end
   end
 
 end
@@ -34,12 +58,18 @@ class Chasqui::MultiBroker < Chasqui::Broker
 
   def forward_event
     payload = redis.lrange(in_progress_queue, -1, -1).first
-    logger.warn "detected failed event delivery, attempting recovery"
+    unless payload.nil?
+      logger.warn "detected failed event delivery, attempting recovery"
+    end
 
-    payload ||= redis.brpoplpush(inbox, in_progress_queue, timeout: 0)
+    payload ||= redis.brpoplpush(inbox, in_progress_queue, timeout: config.broker_poll_interval)
+    if payload.nil?
+      logger.debug "reached timeout for broker poll interval: #{config.broker_poll_interval} seconds"
+      return
+    end
 
     event = JSON.parse payload
-    qualified_event_name = "#{event['namespace']}::#{event['name']}"
+    qualified_event_name = "#{event['namespace']}::#{event['event']}"
     logger.debug "received event: #{qualified_event_name}, payload: #{payload}"
 
     queues = redis.smembers "queues:#{event['namespace']}"

@@ -26,7 +26,12 @@ class Chasqui::CLI
       puts "chasqui #{Chasqui::VERSION}"
     elsif options.help
       puts @parser.help()
+    else
+      Chasqui::Broker.start
     end
+  rescue => ex
+    Chasqui.logger.fatal ex.inspect
+    Chasqui.logger.fatal ex.backtrace.join("\n")
   end
 
   private

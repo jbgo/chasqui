@@ -10,9 +10,10 @@ describe Chasqui::Broker do
 
   %w(INT QUIT ABRT TERM).each do |signal|
     it "forwards events until it receives #{signal}" do
+      Chasqui.config.broker_poll_interval = 1
       pid = fork { Chasqui::MultiBroker.new.start }
 
-      Timeout::timeout(1) do
+      Timeout::timeout(10) do
         Chasqui.subscribe queue: 'queue1', namespace: 'app1'
         Chasqui.config.namespace = 'app1'
         Chasqui.publish 'foo', 'A'

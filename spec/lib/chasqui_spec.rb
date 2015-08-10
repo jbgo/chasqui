@@ -12,6 +12,7 @@ describe Chasqui do
       it { expect(Chasqui.namespace).to eq('__default') }
       it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
+      it { expect(Chasqui.config.broker_poll_interval).to eq(3) }
 
       it do
         # remove chasqui's test environment logger
@@ -36,6 +37,11 @@ describe Chasqui do
     it 'configures the inbox queue' do
       Chasqui.config.inbox_queue = 'foo'
       expect(Chasqui.inbox).to eq('foo')
+    end
+
+    it 'configures the broker poll interval' do
+      Chasqui.config.broker_poll_interval = 1
+      expect(Chasqui.config.broker_poll_interval).to eq(1)
     end
 
     context 'redis' do
