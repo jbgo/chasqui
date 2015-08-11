@@ -5,8 +5,9 @@ require 'redis'
 require 'redis-namespace'
 
 require "chasqui/version"
-require "chasqui/subscriber"
 require "chasqui/broker"
+require "chasqui/subscriber"
+require "chasqui/workers/resque_worker"
 
 module Chasqui
 
