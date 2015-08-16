@@ -110,7 +110,7 @@ module Chasqui
     private
 
     def register_subscriber(queue, namespace)
-      subscribers[queue.to_s] ||= Subscriber.new
+      subscribers[queue.to_s] ||= Subscriber.new queue, namespace
     end
 
     def subscribers

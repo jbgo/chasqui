@@ -1,10 +1,12 @@
 require 'spec_helper'
 
 describe Chasqui::Subscriber do
+  let(:subscriber) { Chasqui::Subscriber.new 'my-queue', 'my.namespace' }
+
+  it { expect(subscriber.queue).to eq('my-queue') }
+  it { expect(subscriber.namespace).to eq('my.namespace') }
 
   describe '#on' do
-    let(:subscriber) { Chasqui::Subscriber.new }
-
     it 'registers the event handlers' do
       subscriber.on('foo') { |foo| foo }
       subscriber.on('zig.zag') { |*args| args }
@@ -25,8 +27,6 @@ describe Chasqui::Subscriber do
   end
 
   describe '#handlers_for' do
-    let(:subscriber) { Chasqui::Subscriber.new }
-
     it 'always returns an array' do
       expect(subscriber.handlers_for('unknown')).to eq([])
     end
@@ -50,8 +50,6 @@ describe Chasqui::Subscriber do
   end
 
   describe '#perform' do
-    let(:subscriber) { Chasqui::Subscriber.new }
-
     it 'calls the matching event handlers' do
       calls = []
       subscriber.on('foo.bar') { |a, b| calls << a + b }
