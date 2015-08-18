@@ -23,8 +23,7 @@ end
 # Newer versions of sidekiq only support newer versions of ruby
 # https://github.com/mperham/sidekiq/blob/master/Changes.md#322
 def sidekiq_supported_ruby_version?
-  Gem::Version.new(RUBY_VERSION) > Gem::Version.new('1.9') &&
-    Gem::Version.new(Sidekiq::VERSION) >= Gem::Version.new('3.2.1')
+  Gem::Version.new(RUBY_VERSION) > Gem::Version.new('1.9')
 end
 
 class FakeSubscriber < Chasqui::Subscriber
