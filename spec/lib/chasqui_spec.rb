@@ -9,7 +9,7 @@ describe Chasqui do
     before { reset_config }
 
     context 'defaults' do
-      it { expect(Chasqui.namespace).to eq('__default') }
+      it { expect(Chasqui.channel).to eq('__default') }
       it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
       it { expect(Chasqui.config.broker_poll_interval).to eq(3) }
@@ -24,14 +24,14 @@ describe Chasqui do
       it { expect(Chasqui.logger.progname).to eq('chasqui') }
     end
 
-    it 'configures the namespace' do
-      Chasqui.config.namespace = 'com.example.test'
-      expect(Chasqui.namespace).to eq('com.example.test')
+    it 'configures the channel' do
+      Chasqui.config.channel = 'com.example.test'
+      expect(Chasqui.channel).to eq('com.example.test')
     end
 
     it 'accepts a block' do
-      Chasqui.configure { |config| config.namespace = 'com.example.test' }
-      expect(Chasqui.namespace).to eq('com.example.test')
+      Chasqui.configure { |config| config.channel = 'com.example.test' }
+      expect(Chasqui.channel).to eq('com.example.test')
     end
 
     it 'configures the inbox queue' do
@@ -108,17 +108,17 @@ describe Chasqui do
       payloads.each do |data|
         event = JSON.load Chasqui.redis.rpop('inbox')
         expect(event['event']).to eq('test.event')
-        expect(event['namespace']).to eq('__default')
+        expect(event['channel']).to eq('__default')
         expect(event['data']).to eq(data)
       end
     end
 
-    it 'supports namespaces' do
-      Chasqui.config.namespace = 'my.app'
+    it 'supports channels' do
+      Chasqui.config.channel = 'my.app'
       Chasqui.publish 'test.event', :foo
       event = JSON.load Chasqui.redis.rpop('inbox')
       expect(event['event']).to eq('test.event')
-      expect(event['namespace']).to eq('my.app')
+      expect(event['channel']).to eq('my.app')
       expect(event['data']).to eq(['foo'])
     end
   end
@@ -127,9 +127,9 @@ describe Chasqui do
     before { reset_chasqui }
 
     it 'saves subscriptions' do
-      sub1 = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.admin'
-      sub2 = Chasqui.subscribe queue: 'app2-queue', namespace: 'com.example.admin'
-      sub3 = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.video'
+      sub1 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+      sub2 = Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
+      sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
 
       queues = Chasqui.redis.smembers "queues:com.example.admin"
       expect(queues.sort).to eq(['app1-queue', 'app2-queue'])
@@ -143,13 +143,13 @@ describe Chasqui do
     end
 
     it 'returns a subscriber' do
-      subscriber = Chasqui.subscribe queue: 'app1-queue', namespace: 'com.example.admin'
+      subscriber = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
       expect(subscriber).to be_kind_of(Chasqui::Subscriber)
     end
 
     it 'yields a subscriber configuration context' do
       $context = nil
-      Chasqui.subscribe queue: 'foo', namespace: 'bar' do
+      Chasqui.subscribe queue: 'foo', channel: 'bar' do
         $context = self
       end
       expect($context).to be_kind_of(Chasqui::Subscriber)

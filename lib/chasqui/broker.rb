@@ -69,10 +69,10 @@ class Chasqui::MultiBroker < Chasqui::Broker
     end
 
     event = JSON.parse payload
-    qualified_event_name = "#{event['namespace']}::#{event['event']}"
+    qualified_event_name = "#{event['channel']}::#{event['event']}"
     logger.debug "received event: #{qualified_event_name}, payload: #{payload}"
 
-    queues = redis.smembers "queues:#{event['namespace']}"
+    queues = redis.smembers "queues:#{event['channel']}"
     logger.debug "subscriber queues: #{queues.join(', ')}"
 
     redis.multi do

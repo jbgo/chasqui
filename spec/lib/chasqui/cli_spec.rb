@@ -70,12 +70,12 @@ describe Chasqui::CLI do
       Timeout::timeout(10) do
         Chasqui.configure do |c|
           c.inbox_queue = 'inbox2'
-          c.namespace = 'any'
+          c.channel = 'any'
         end
 
         queues = ['queue1', 'queue2']
         queues.each do |queue|
-          Chasqui.subscribe queue: queue, namespace: 'any'
+          Chasqui.subscribe queue: queue, channel: 'any'
         end
 
         Chasqui.publish 'foo', 'bar'

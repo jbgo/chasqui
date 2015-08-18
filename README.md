@@ -70,12 +70,12 @@ Publishing events is simple.
 Chasqui.publish 'user.sign-up', user_id
 ```
 
-To prevent conflicts with other applications, you can choose a unique namespace for your events.
+To prevent conflicts with other applications, you can choose a unique channel for your events.
 
 ```rb
 # config/initializers/chasqui.rb
 Chasqui.configure do |config|
-  config.namespace = 'com.example.myapp'
+  config.channel = 'com.example.myapp'
 end
 ```
 
@@ -86,7 +86,7 @@ Now when you call `Chasqui.publish 'event.name', data, ...`, Chasqui will publis
 
 ```rb
 # file: otherapp/app/subscribers/user_events.rb
-Chasqui.subscribe queue: 'unique_queue_name_for_app', namespace: 'com.example.myapp' do
+Chasqui.subscribe queue: 'unique_queue_name_for_app', channel: 'com.example.myapp' do
 
   on 'user.sign-up' do |user_id|
     user = User.find user_id
@@ -106,7 +106,7 @@ end
 
 ```rb
 Chasqui.configure do |config|
-  config.namespace = 'com.example.transcoder'
+  config.channel = 'com.example.transcoder'
   config.redis = ENV.fetch('REDIS_URL')
   config.workers = :sidekiq # or :resque
   ...

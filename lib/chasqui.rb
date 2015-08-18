@@ -15,13 +15,13 @@ module Chasqui
   Defaults = {
     inbox_queue: 'inbox',
     redis_namespace: 'chasqui',
-    publish_namespace: '__default',
+    publish_channel: '__default',
     broker_poll_interval: 3
   }.freeze
 
-  class Config < Struct.new :logger, :namespace, :redis, :inbox_queue, :broker_poll_interval
-    def namespace
-      self[:namespace] ||= Defaults.fetch(:publish_namespace)
+  class Config < Struct.new :logger, :channel, :redis, :inbox_queue, :broker_poll_interval
+    def channel
+      self[:channel] ||= Defaults.fetch(:publish_channel)
     end
 
     def inbox_queue
@@ -78,7 +78,7 @@ module Chasqui
 
   module ClassMethods
     extend Forwardable
-    def_delegators :config, :redis, :namespace, :inbox, :inbox_queue, :logger
+    def_delegators :config, :redis, :channel, :inbox, :inbox_queue, :logger
 
     def configure(&block)
       @config ||= Config.new
@@ -90,17 +90,17 @@ module Chasqui
     end
 
     def publish(event, *args)
-      payload = { event: event, namespace: namespace, data: args }
+      payload = { event: event, channel: channel, data: args }
       redis.lpush inbox_queue, payload.to_json
     end
 
     def subscribe(options={}, &block)
       queue = options.fetch :queue
-      namespace = options.fetch :namespace
+      channel = options.fetch :channel
 
-      register_subscriber(queue, namespace).tap do |sub|
+      register_subscriber(queue, channel).tap do |sub|
         sub.evaluate(&block) if block_given?
-        redis.sadd "queues:#{namespace}", queue
+        redis.sadd "queues:#{channel}", queue
       end
     end
 
@@ -110,8 +110,8 @@ module Chasqui
 
     private
 
-    def register_subscriber(queue, namespace)
-      subscribers[queue.to_s] ||= Subscriber.new queue, namespace
+    def register_subscriber(queue, channel)
+      subscribers[queue.to_s] ||= Subscriber.new queue, channel
     end
 
     def subscribers

@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'sidekiq'
 
 describe Chasqui::SidekiqWorker do
-  let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.namespace'}
+  let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
 
   describe '.create' do
     it 'configures a new worker' do

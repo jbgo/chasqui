@@ -14,8 +14,8 @@ describe Chasqui::Broker do
       pid = fork { Chasqui::MultiBroker.new.start }
 
       Timeout::timeout(10) do
-        Chasqui.subscribe queue: 'queue1', namespace: 'app1'
-        Chasqui.config.namespace = 'app1'
+        Chasqui.subscribe queue: 'queue1', channel: 'app1'
+        Chasqui.config.channel = 'app1'
         Chasqui.publish 'foo', 'A'
         Chasqui.publish 'bar', 'B'
 
@@ -38,10 +38,10 @@ describe Chasqui::MultiBroker do
 
   describe '#forward_event' do
     before do
-      Chasqui.config.namespace = 'app1'
-      Chasqui.subscribe queue: 'queue1', namespace: 'app1'
-      Chasqui.subscribe queue: 'queue2', namespace: 'app2'
-      Chasqui.subscribe queue: 'queue3', namespace: 'app1'
+      Chasqui.config.channel = 'app1'
+      Chasqui.subscribe queue: 'queue1', channel: 'app1'
+      Chasqui.subscribe queue: 'queue2', channel: 'app2'
+      Chasqui.subscribe queue: 'queue3', channel: 'app1'
     end
 
     it 'places the event on all subscriber queues' do
@@ -54,7 +54,7 @@ describe Chasqui::MultiBroker do
       expect(redis.llen('queue2')).to eq(0)
       expect(redis.llen('queue3')).to eq(1)
 
-      event = { 'event' => 'foo.bar', 'namespace' => 'app1', 'data' => ['A'] }
+      event = { 'event' => 'foo.bar', 'channel' => 'app1', 'data' => ['A'] }
       expect(JSON.parse redis.rpop('queue1')).to include(event)
       expect(JSON.parse redis.rpop('queue3')).to include(event)
     end
@@ -65,11 +65,11 @@ describe Chasqui::MultiBroker do
       begin
         Timeout::timeout(1) do
           Chasqui.config.redis = Redis.new
-          Chasqui.config.namespace = 'app2'
+          Chasqui.config.channel = 'app2'
           Chasqui.publish 'foo.bar', 'A'
 
           expect(JSON.parse redis.brpop('queue2')[1]).to include(
-            'event' => 'foo.bar', 'namespace' => 'app2', 'data' => ['A'])
+            'event' => 'foo.bar', 'channel' => 'app2', 'data' => ['A'])
         end
       ensure
         thread.kill
@@ -77,7 +77,7 @@ describe Chasqui::MultiBroker do
     end
 
     it "doesn't lose events if the broker fails" do
-      Chasqui.config.namespace = 'app2'
+      Chasqui.config.channel = 'app2'
       Chasqui.publish 'foo', 'process'
       Chasqui.publish 'foo', 'keep in queue'
       allow(broker.redis).to receive(:smembers).and_raise(Redis::ConnectionError)
@@ -91,7 +91,7 @@ describe Chasqui::MultiBroker do
       expect(redis.llen('queue2')).to eq(1)
       expect(redis.llen(broker.in_progress_queue)).to eq(0)
       expect(JSON.parse redis.rpop('queue2')).to include(
-        'event' => 'foo', 'namespace' => 'app2', 'data' => ['process'])
+        'event' => 'foo', 'channel' => 'app2', 'data' => ['process'])
     end
   end
 end

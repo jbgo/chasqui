@@ -1,10 +1,10 @@
 require 'spec_helper'
 
 describe Chasqui::Subscriber do
-  let(:subscriber) { Chasqui::Subscriber.new 'my-queue', 'my.namespace' }
+  let(:subscriber) { Chasqui::Subscriber.new 'my-queue', 'my.channel' }
 
   it { expect(subscriber.queue).to eq('my-queue') }
-  it { expect(subscriber.namespace).to eq('my.namespace') }
+  it { expect(subscriber.channel).to eq('my.channel') }
 
   describe '#on' do
     it 'registers the event handlers' do

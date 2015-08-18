@@ -3,11 +3,11 @@ module Chasqui
   HandlerAlreadyRegistered = Class.new StandardError
 
   class Subscriber
-    attr_reader :queue, :namespace
+    attr_reader :queue, :channel
 
-    def initialize(queue, namespace)
+    def initialize(queue, channel)
       @queue = queue
-      @namespace = namespace
+      @channel = channel
     end
 
     def on(event_name, &block)

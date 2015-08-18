@@ -23,7 +23,7 @@ end
 class FakeSubscriber < Chasqui::Subscriber
   attr_reader :events
 
-  def initialize(queue, namespace)
+  def initialize(queue, channel)
     super
     @events ||= []
   end

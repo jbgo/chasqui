@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Chasqui::ResqueWorker do
-  let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.namespace'}
+  let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
 
   describe '.create' do
     it 'configures a new worker' do
