@@ -8,6 +8,7 @@ require "chasqui/version"
 require "chasqui/broker"
 require "chasqui/subscriber"
 require "chasqui/workers/resque_worker"
+require "chasqui/workers/sidekiq_worker"
 
 module Chasqui
 

@@ -19,3 +19,16 @@ end
 def flush_redis
   redis.keys('*').each { |k| redis.del k }
 end
+
+class FakeSubscriber < Chasqui::Subscriber
+  attr_reader :events
+
+  def initialize(queue, namespace)
+    super
+    @events ||= []
+  end
+
+  def perform(event)
+    @events << event
+  end
+end

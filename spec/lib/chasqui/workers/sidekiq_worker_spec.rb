@@ -1,21 +1,23 @@
 require 'spec_helper'
+require 'sidekiq'
 
-describe Chasqui::ResqueWorker do
+describe Chasqui::SidekiqWorker do
   let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.namespace'}
 
   describe '.create' do
     it 'configures a new worker' do
-      worker_class = Chasqui::ResqueWorker.create(subscriber)
-      expect(worker_class.ancestors).to include(Chasqui::ResqueWorker)
-      expect(worker_class.instance_variable_get(:@queue)).to eq('my-queue')
+      worker_class = Chasqui::SidekiqWorker.create(subscriber)
+      expect(worker_class.included_modules).to include(Sidekiq::Worker)
+      expect(worker_class.sidekiq_options).to include('queue' => 'my-queue')
     end
   end
 
-  describe '.perform' do
-    let(:worker) { Chasqui::ResqueWorker.create(subscriber) }
+  describe '#perform' do
+    let(:worker_class) { Chasqui::SidekiqWorker.create(subscriber) }
 
     it 'delegates to the subscriber' do
       event = { 'event' => 'foo', 'data' => ['bar'] }
+      worker = worker_class.new
       worker.perform event
       received_event = subscriber.events.shift
       expect(received_event).to eq(event)
