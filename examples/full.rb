@@ -48,7 +48,7 @@ Chasqui.subscribe queue: 'admin.events', namespace: 'com.example.transcoder' do
     VideoMailer.transcode_complete(video).deliver
   end
 
-  on 'transcoder.video.complete' do |video_id, error|
+  on 'transcoder.video.error' do |video_id, error|
     video = Video.find video_id
     VideoMailer.transcode_error(video, error).deliver
   end
