@@ -131,10 +131,10 @@ describe Chasqui do
       sub2 = Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
       sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
 
-      queues = Chasqui.redis.smembers "queues:com.example.admin"
+      queues = Chasqui.redis.smembers "subscribers:com.example.admin"
       expect(queues.sort).to eq(['app1-queue', 'app2-queue'])
 
-      queues = Chasqui.redis.smembers "queues:com.example.video"
+      queues = Chasqui.redis.smembers "subscribers:com.example.video"
       expect(queues).to eq(['app1-queue'])
 
       expect(Chasqui.subscriber('app1-queue')).to eq(sub1)

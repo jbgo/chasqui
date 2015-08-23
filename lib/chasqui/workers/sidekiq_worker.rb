@@ -10,7 +10,7 @@ class Chasqui::SidekiqWorker
           @subscriber = subscriber
 
           def perform(event)
-            self.class.subscriber.perform event
+            self.class.subscriber.perform "TODO: redis", event
           end
 
           private

@@ -58,42 +58,16 @@ describe Chasqui::CLI do
 
   describe '#run' do
     before { reset_chasqui }
-    after { File.unlink 'test.log' if File.exists? 'test.log' }
 
-    it 'processes events' do
+    it 'configures and starts the broker' do
+      expect(Chasqui::Broker).to receive(:start)
 
-      pid = fork do
-        argv = %w(chasqui -f test.log --debug -q inbox2 -r redis://127.0.0.1:6379/0)
-        Chasqui::CLI.new(argv).run
-      end
+      argv = %w(chasqui -f test.log --debug -q inbox2 -r redis://127.0.0.1:6379/0)
+      Chasqui::CLI.new(argv).run
 
-      Timeout::timeout(10) do
-        Chasqui.configure do |c|
-          c.inbox_queue = 'inbox2'
-          c.channel = 'any'
-        end
-
-        queues = ['queue1', 'queue2']
-        queues.each do |queue|
-          Chasqui.subscribe queue: queue, channel: 'any'
-        end
-
-        Chasqui.publish 'foo', 'bar'
-
-        queues.each do |queue|
-          event = JSON.parse(redis.brpop(queue)[1])
-          expect(event['event']).to eq('foo')
-        end
-
-        Process.kill 'TERM', pid
-        _, status = Process.wait2 pid
-        expect(status.exitstatus).to eq(0)
-
-        logs = File.read 'test.log'
-        expect(logs).to include('chasqui')
-        expect(logs).to include('configured to fetch events from inbox2')
-        expect(logs).to include('processed event: any::foo')
-      end
+      expect(Chasqui.logger.level).to eq(Logger::DEBUG)
+      expect(Chasqui.inbox_queue).to eq('inbox2')
+      expect(Chasqui.redis.client.host).to eq('127.0.0.1')
     end
   end
 

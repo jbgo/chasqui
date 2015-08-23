@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'resque'
 
 describe Chasqui::ResqueWorker do
   let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
@@ -6,6 +7,7 @@ describe Chasqui::ResqueWorker do
   describe '.create' do
     it 'configures a new worker' do
       worker_class = Chasqui::ResqueWorker.create(subscriber)
+      expect(worker_class.name).to eq('Chasqui::Subscriber__my_queue')
       expect(worker_class.ancestors).to include(Chasqui::ResqueWorker)
       expect(worker_class.instance_variable_get(:@queue)).to eq('my-queue')
     end

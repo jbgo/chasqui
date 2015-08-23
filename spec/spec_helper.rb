@@ -34,7 +34,7 @@ class FakeSubscriber < Chasqui::Subscriber
     @events ||= []
   end
 
-  def perform(event)
+  def perform(redis, event)
     @events << event
   end
 end

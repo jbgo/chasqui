@@ -29,7 +29,7 @@ module Chasqui
       self.current_event = event
 
       handlers_for(event['event']).each do |pattern|
-        send "handler__#{pattern.to_s}", *event['data']
+        call_handler pattern, *event['data']
       end
     end
 
@@ -37,6 +37,10 @@ module Chasqui
       handlers.select do |pattern|
         pattern =~ event_name
       end
+    end
+
+    def call_handler(pattern, *args)
+      send "handler__#{pattern.to_s}", *args
     end
 
     def evaluate(&block)

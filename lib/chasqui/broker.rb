@@ -58,8 +58,8 @@ end
 class Chasqui::MultiBroker < Chasqui::Broker
 
   def forward_event
-    payload = redis.lrange(in_progress_queue, -1, -1).first
-    unless payload.nil?
+    event = redis.lrange(in_progress_queue, -1, -1).first
+    unless event.nil?
       logger.warn "detected failed event delivery, attempting recovery"
     end
 
