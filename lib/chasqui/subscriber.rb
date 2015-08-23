@@ -1,8 +1,11 @@
+require 'set'
+
 module Chasqui
 
   HandlerAlreadyRegistered = Class.new StandardError
 
   class Subscriber
+    attr_accessor :redis, :current_event
     attr_reader :queue, :channel
 
     def initialize(queue, channel)
@@ -11,23 +14,29 @@ module Chasqui
     end
 
     def on(event_name, &block)
-      pattern = pattern_for_event event_name 
+      pattern = pattern_for_event event_name
 
-      if handlers.key? pattern
+      if handlers.include? pattern
         raise HandlerAlreadyRegistered.new "handler already registered for event: #{event_name}"
       else
-        handlers[pattern] = block
+        handlers << pattern
+        self.class.send :define_method, "handler__#{pattern.to_s}", &block
       end
     end
 
-    def perform(event)
-      handlers_for(event['name']).each do |handler|
-        handler.call *event['data']
+    def perform(redis_for_worker, event)
+      self.redis = redis_for_worker
+      self.current_event = event
+
+      handlers_for(event['event']).each do |pattern|
+        send "handler__#{pattern.to_s}", *event['data']
       end
     end
 
     def handlers_for(event_name)
-      handlers.select { |pattern, handler| pattern =~ event_name }.values
+      handlers.select do |pattern|
+        pattern =~ event_name
+      end
     end
 
     def evaluate(&block)
@@ -38,7 +47,7 @@ module Chasqui
     private
 
     def handlers
-      @handlers ||= {}
+      @handlers ||= Set.new
     end
 
     def method_missing(method, *args, &block)

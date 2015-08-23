@@ -13,6 +13,7 @@ class Chasqui::Broker
   def initialize
     @config = Chasqui.config.dup
     @config.redis = Redis.new @config.redis.client.options
+    logger.info "broker started with pid #{Process.pid}"
     logger.info "configured to fetch events from #{inbox} on #{redis.inspect}"
   end
 
@@ -62,21 +63,26 @@ class Chasqui::MultiBroker < Chasqui::Broker
       logger.warn "detected failed event delivery, attempting recovery"
     end
 
-    payload ||= redis.brpoplpush(inbox, in_progress_queue, timeout: config.broker_poll_interval)
-    if payload.nil?
+    event ||= redis.brpoplpush(inbox, in_progress_queue, timeout: config.broker_poll_interval)
+    if event.nil?
       logger.debug "reached timeout for broker poll interval: #{config.broker_poll_interval} seconds"
       return
     end
 
-    event = JSON.parse payload
+    event = JSON.parse event
     qualified_event_name = "#{event['channel']}::#{event['event']}"
-    logger.debug "received event: #{qualified_event_name}, payload: #{payload}"
+    logger.debug "received event: #{qualified_event_name}, event: #{event}"
 
-    queues = redis.smembers "queues:#{event['channel']}"
+
+    queues = redis.smembers "subscribers:#{event['channel']}"
     logger.debug "subscriber queues: #{queues.join(', ')}"
 
     redis.multi do
-      queues.each { |queue| redis.rpush queue, payload }
+      queues.each do |queue|
+        job = { class: "Chasqui::Subscriber__#{queue}", args: [event] }.to_json
+        logger.debug "queue:#{queue} job:#{job}"
+        redis.rpush "queue:#{queue}", job
+      end
       redis.rpop(in_progress_queue)
     end
 

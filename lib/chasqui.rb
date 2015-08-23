@@ -100,7 +100,8 @@ module Chasqui
 
       register_subscriber(queue, channel).tap do |sub|
         sub.evaluate(&block) if block_given?
-        redis.sadd "queues:#{channel}", queue
+        Chasqui::ResqueWorker.create sub
+        redis.sadd "subscribers:#{channel}", queue
       end
     end
 
