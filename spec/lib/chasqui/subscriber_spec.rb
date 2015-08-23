@@ -11,10 +11,10 @@ describe Chasqui::Subscriber do
       subscriber.on('foo') { |foo| foo }
       subscriber.on('zig.zag') { |*args| args }
 
-      pattern = subscriber.handlers_for('foo').first
+      pattern = subscriber.matching_handler_patterns_for('foo').first
       expect(subscriber.call_handler(pattern, 'bar')).to eq('bar')
 
-      pattern = subscriber.handlers_for('zig.zag').first
+      pattern = subscriber.matching_handler_patterns_for('zig.zag').first
       expect(subscriber.call_handler(pattern, 1, 2, 3, 4)).to eq([1, 2, 3, 4])
     end
 
@@ -26,15 +26,15 @@ describe Chasqui::Subscriber do
     end
   end
 
-  describe '#handlers_for' do
+  describe '#matching_handler_patterns_for' do
     it 'always returns an array' do
-      expect(subscriber.handlers_for('unknown')).to eq([])
+      expect(subscriber.matching_handler_patterns_for('unknown')).to eq([])
     end
 
     it 'matches single event' do
       p = Proc.new { }
       subscriber.on('foo', &p)
-      expect(subscriber.handlers_for('foo')).to eq([/\Afoo\z/])
+      expect(subscriber.matching_handler_patterns_for('foo')).to eq([/\Afoo\z/])
     end
 
     it 'matches wildcards' do
@@ -45,7 +45,7 @@ describe Chasqui::Subscriber do
       subscriber.on('*', &p[3])
       subscriber.on('*a*', &p[4])
       subscriber.on('*z*', &p[5])
-      expect(subscriber.handlers_for('foo.bar')).to eq([
+      expect(subscriber.matching_handler_patterns_for('foo.bar')).to eq([
         /\Afoo.*\z/,
         /\A.*bar\z/,
         /\A.*\z/,

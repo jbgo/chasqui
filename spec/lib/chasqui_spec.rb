@@ -13,6 +13,7 @@ describe Chasqui do
       it { expect(Chasqui.inbox_queue).to eq('inbox') }
       it { expect(Chasqui.redis.client.db).to eq(0) }
       it { expect(Chasqui.config.broker_poll_interval).to eq(3) }
+      it { expect(Chasqui.config.worker_backend).to eq(nil) }
 
       it do
         # remove chasqui's test environment logger
@@ -153,6 +154,30 @@ describe Chasqui do
         $context = self
       end
       expect($context).to be_kind_of(Chasqui::Subscriber)
+    end
+  end
+
+  describe '.create_worker' do
+    let(:subscriber) { j }
+
+    it 'raises when no worker backend configured' do
+      expect(-> {
+        Chasqui.create_worker nil
+      }).to raise_error(Chasqui::ConfigurationError)
+    end
+
+    it 'creates a resque worker' do
+      subscriber = FakeSubscriber.new 'resque-queue', 'fake-channel'
+      Chasqui.config.worker_backend = :resque
+      worker = Chasqui.create_worker subscriber
+      expect(worker.new).to be_kind_of(Chasqui::ResqueWorker)
+    end
+
+    it 'creates a sidekiq worker' do
+      subscriber = FakeSubscriber.new 'sidekiq-queue', 'fake-channel'
+      Chasqui.config.worker_backend = :sidekiq
+      worker = Chasqui.create_worker subscriber
+      expect(worker.new).to be_kind_of(Chasqui::SidekiqWorker)
     end
   end
 end

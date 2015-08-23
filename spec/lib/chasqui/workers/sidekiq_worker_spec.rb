@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 if sidekiq_supported_ruby_version?
-  require 'sidekiq'
 
   describe Chasqui::SidekiqWorker do
     let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
@@ -11,6 +10,7 @@ if sidekiq_supported_ruby_version?
         worker_class = Chasqui::SidekiqWorker.create(subscriber)
         expect(worker_class.included_modules).to include(Sidekiq::Worker)
         expect(worker_class.sidekiq_options).to include('queue' => 'my-queue')
+        expect(worker_class.new).to be_kind_of(Chasqui::SidekiqWorker)
       end
     end
 

@@ -16,11 +16,11 @@ module Chasqui
     def on(event_name, &block)
       pattern = pattern_for_event event_name
 
-      if handlers.include? pattern
+      if handler_patterns.include? pattern
         raise HandlerAlreadyRegistered.new "handler already registered for event: #{event_name}"
       else
-        handlers << pattern
-        self.class.send :define_method, "handler__#{pattern.to_s}", &block
+        handler_patterns << pattern
+        define_handler_method pattern, &block
       end
     end
 
@@ -28,13 +28,13 @@ module Chasqui
       self.redis = redis_for_worker
       self.current_event = event
 
-      handlers_for(event['event']).each do |pattern|
+      matching_handler_patterns_for(event['event']).each do |pattern|
         call_handler pattern, *event['data']
       end
     end
 
-    def handlers_for(event_name)
-      handlers.select do |pattern|
+    def matching_handler_patterns_for(event_name)
+      handler_patterns.select do |pattern|
         pattern =~ event_name
       end
     end
@@ -50,8 +50,8 @@ module Chasqui
 
     private
 
-    def handlers
-      @handlers ||= Set.new
+    def handler_patterns
+      @handler_patterns ||= Set.new
     end
 
     def method_missing(method, *args, &block)
@@ -64,6 +64,10 @@ module Chasqui
 
     def pattern_for_event(event_name)
       /\A#{event_name.to_s.downcase.gsub('*', '.*')}\z/
+    end
+
+    def define_handler_method(pattern, &block)
+      self.class.send :define_method, "handler__#{pattern.to_s}", &block
     end
 
   end

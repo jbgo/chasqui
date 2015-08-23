@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'chasqui'
+require 'resque'
 require 'pp'
 
 def reset_chasqui
@@ -24,6 +25,10 @@ end
 # https://github.com/mperham/sidekiq/blob/master/Changes.md#322
 def sidekiq_supported_ruby_version?
   Gem::Version.new(RUBY_VERSION) > Gem::Version.new('1.9.3')
+end
+
+if sidekiq_supported_ruby_version?
+  require 'sidekiq'
 end
 
 class FakeSubscriber < Chasqui::Subscriber
