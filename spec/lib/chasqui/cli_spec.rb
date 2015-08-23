@@ -8,15 +8,15 @@ describe Chasqui::CLI do
 
     context do
       before { Chasqui.config.broker_poll_interval = 1 }
-      after { File.unlink 'test.log' if File.exists? 'test.log' }
+      after { File.unlink 'tmp/test.log' if File.exists? 'tmp/test.log' }
 
       it 'changes the logfile' do
-        cli = Chasqui::CLI.new ['chasqui', '-f', 'test.log']
-        expect(cli.logfile).to eq('test.log')
+        cli = Chasqui::CLI.new ['chasqui', '-f', 'tmp/test.log']
+        expect(cli.logfile).to eq('tmp/test.log')
 
         cli.configure
-        Chasqui.logger.warn 'test log message'
-        expect(File.read('test.log')).to match('test log message')
+        Chasqui.logger.warn 'tmp/test.log message'
+        expect(File.read('tmp/test.log')).to match('tmp/test.log message')
       end
     end
 
@@ -62,7 +62,7 @@ describe Chasqui::CLI do
     it 'configures and starts the broker' do
       expect(Chasqui::Broker).to receive(:start)
 
-      argv = %w(chasqui -f test.log --debug -q inbox2 -r redis://127.0.0.1:6379/0)
+      argv = %w(chasqui -f tmp/test.log --debug -q inbox2 -r redis://127.0.0.1:6379/0)
       Chasqui::CLI.new(argv).run
 
       expect(Chasqui.logger.level).to eq(Logger::DEBUG)
