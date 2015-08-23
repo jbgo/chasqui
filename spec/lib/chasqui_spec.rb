@@ -173,11 +173,13 @@ describe Chasqui do
       expect(worker.new).to be_kind_of(Chasqui::ResqueWorker)
     end
 
-    it 'creates a sidekiq worker' do
-      subscriber = FakeSubscriber.new 'sidekiq-queue', 'fake-channel'
-      Chasqui.config.worker_backend = :sidekiq
-      worker = Chasqui.create_worker subscriber
-      expect(worker.new).to be_kind_of(Chasqui::SidekiqWorker)
+    if sidekiq_supported_ruby_version?
+      it 'creates a sidekiq worker' do
+        subscriber = FakeSubscriber.new 'sidekiq-queue', 'fake-channel'
+        Chasqui.config.worker_backend = :sidekiq
+        worker = Chasqui.create_worker subscriber
+        expect(worker.new).to be_kind_of(Chasqui::SidekiqWorker)
+      end
     end
   end
 end

@@ -10,14 +10,14 @@ module Chasqui
   class ConfigurationError < StandardError
   end
 
-  CONFIG_SETTINGS = %i(
-    broker_poll_interval
-    channel
-    inbox_queue
-    logger
-    redis
-    worker_backend
-  )
+  CONFIG_SETTINGS = [
+    :broker_poll_interval,
+    :channel,
+    :inbox_queue,
+    :logger,
+    :redis,
+    :worker_backend
+  ]
 
   class Config < Struct.new(*CONFIG_SETTINGS)
     def channel
