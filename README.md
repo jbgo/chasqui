@@ -82,7 +82,7 @@ end
 Now when you call `Chasqui.publish 'event.name', data, ...`, Chasqui will publish the event
 `com.example.myapp.user.sign-up`.
 
-## Subscribing to events (COMING SOON)
+## Subscribing to events
 
 ```rb
 # file: otherapp/app/subscribers/user_events.rb
