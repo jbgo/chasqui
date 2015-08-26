@@ -69,5 +69,10 @@ describe Chasqui::MultiBroker do
         'event' => 'foo', 'channel' => 'app2', 'data' => ['process'])
       expect(redis.llen(broker.in_progress_queue)).to eq(0)
     end
+
+    it 'works when queue is empty' do
+      Chasqui.config.broker_poll_interval = 1
+      expect(-> { broker.forward_event }).not_to raise_error
+    end
   end
 end
