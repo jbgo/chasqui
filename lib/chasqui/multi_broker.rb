@@ -22,9 +22,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
 
   def receive
     event = retry_failed_event || dequeue
-    logger.debug "received event: #{event['event']}, on channel: #{event['channel']}"
-
-    JSON.parse event
+    JSON.parse(event) if event
   end
 
   def retry_failed_event
@@ -39,6 +37,8 @@ class Chasqui::MultiBroker < Chasqui::Broker
     redis.brpoplpush(inbox, in_progress_queue, timeout: config.broker_poll_interval).tap do |event|
       if event.nil?
         logger.debug "reached timeout for broker poll interval: #{config.broker_poll_interval} seconds"
+      else
+        logger.debug "received event: #{event['event']}, on channel: #{event['channel']}"
       end
     end
   end
