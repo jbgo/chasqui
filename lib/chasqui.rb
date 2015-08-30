@@ -37,13 +37,18 @@ module Chasqui
 
       register_subscriber(queue, channel).tap do |sub|
         sub.evaluate(&block) if block_given?
-        Chasqui::ResqueWorker.create sub
-        redis.sadd "subscribers:#{channel}", queue
+        worker = create_worker(sub)
+        redis.sadd "subscribers:#{channel}", to_key(worker.namespace, 'queue', queue)
       end
     end
 
     def subscriber(queue)
       subscribers[queue.to_s]
+    end
+
+    def subscriber_class_name(queue)
+      queue_name_constant = queue.split(':').last.gsub(/[^\w]/, '_')
+      "Subscriber__#{queue_name_constant}".to_sym
     end
 
     def create_worker(subscriber)
@@ -59,6 +64,10 @@ module Chasqui
     end
 
     private
+
+    def to_key(*args)
+      args.compact.join(':')
+    end
 
     def register_subscriber(queue, channel)
       subscribers[queue.to_s] ||= Subscriber.new queue, channel

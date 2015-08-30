@@ -2,6 +2,10 @@ class Chasqui::SidekiqWorker
 
   class << self
 
+    def namespace
+      Sidekiq.redis { |r| r.respond_to?(:namespace) ? r.namespace : nil }
+    end
+
     def create(subscriber)
       Class.new(Chasqui::SidekiqWorker) do
         include Sidekiq::Worker

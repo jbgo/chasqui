@@ -14,8 +14,13 @@ module ChasquiSpecHelpers
     Chasqui.redis
   end
 
+  def redis_no_namespace
+    redis.redis
+  end
+  alias nnredis redis_no_namespace
+
   def flush_redis
-    redis.keys('*').each { |k| redis.del k }
+    nnredis.keys('*').each { |k| nnredis.del k }
   end
 
 end

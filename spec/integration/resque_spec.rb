@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "Chasqui resque integration" do
+describe "Chasqui resque integration", integration: true do
 
   PUBLISH_EVENTS = [
     { event: 'user.signup',    data: ['Kelly'] },
@@ -29,8 +29,8 @@ describe "Chasqui resque integration" do
   before do
     @subscriber_queues = %w(app1 app2)
     @redis_url = 'redis://localhost:6379/13'
-    @redis = Redis.new url: @redis_url
-    @redis.keys('*').each { |k| @redis.del k }
+    nnredis = Redis.new url: @redis_url
+    nnredis.keys('*').each { |k| nnredis.del k }
 
     Chasqui.configure do |c|
       c.channel = 'integration'
@@ -59,7 +59,7 @@ describe "Chasqui resque integration" do
       Timeout::timeout(10) do
         EXPECTED_EVENTS.each do |subscriber_queue, events|
           events.each do |expected|
-            _, payload = @redis.blpop "chasqui:#{subscriber_queue}:event_log"
+            _, payload = nnredis.blpop "resque:#{subscriber_queue}:event_log"
             actual = JSON.parse payload
             expect(actual['event']).to eq(expected[:event])
             expect(actual['data']).to eq(expected[:data])
@@ -86,7 +86,7 @@ describe "Chasqui resque integration" do
         ENV['CHASQUI_ENV'] = 'test'
         ENV['QUEUE'] = queue
         ENV['TERM_CHILD'] = '1'
-        ENV['INTERVAL'] = '0.1'
+        ENV['INTERVAL'] = '1'
         ENV['REDIS_NAMESPACE'] = "resque:#{queue}"
         ENV['REDIS_URL'] = @redis_url
         exec 'bundle', 'exec', 'rake', 'resque:work'

@@ -2,6 +2,10 @@ class Chasqui::ResqueWorker
 
   class << self
 
+    def namespace
+      Resque.redis.namespace
+    end
+
     # Factory method to create a Resque worker class for a Chasqui::Subscriber instance.
     def create(subscriber)
       find_or_build_worker(subscriber).tap do |worker|
@@ -19,7 +23,7 @@ class Chasqui::ResqueWorker
     private
 
     def find_or_build_worker(subscriber)
-      class_name = class_name_for subscriber
+      class_name = Chasqui.subscriber_class_name(subscriber.queue)
 
       if Chasqui.const_defined? class_name
         Chasqui.const_get class_name

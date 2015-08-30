@@ -1,3 +1,8 @@
+require 'chasqui'
+require 'resque'
+
+Chasqui.config.worker_backend = :resque
+
 def log_event subscriber, args
   event = subscriber.current_event
   payload = { event: event['event'], data: args }.to_json

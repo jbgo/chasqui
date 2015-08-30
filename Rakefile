@@ -19,5 +19,5 @@ task :environment do
 
   require 'resque'
   Resque.redis = ENV['REDIS_URL'] if ENV['REDIS_URL']
-  Resque.redis.namespace = 'chasqui'
+  Resque.redis.namespace = :resque
 end

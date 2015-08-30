@@ -124,39 +124,6 @@ describe Chasqui do
     end
   end
 
-  describe '.subscribe' do
-    before { reset_chasqui }
-
-    it 'saves subscriptions' do
-      sub1 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
-      sub2 = Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
-      sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
-
-      queues = Chasqui.redis.smembers "subscribers:com.example.admin"
-      expect(queues.sort).to eq(['app1-queue', 'app2-queue'])
-
-      queues = Chasqui.redis.smembers "subscribers:com.example.video"
-      expect(queues).to eq(['app1-queue'])
-
-      expect(Chasqui.subscriber('app1-queue')).to eq(sub1)
-      expect(Chasqui.subscriber('app2-queue')).to eq(sub2)
-      expect(sub1).to eq(sub3)
-    end
-
-    it 'returns a subscriber' do
-      subscriber = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
-      expect(subscriber).to be_kind_of(Chasqui::Subscriber)
-    end
-
-    it 'yields a subscriber configuration context' do
-      $context = nil
-      Chasqui.subscribe queue: 'foo', channel: 'bar' do
-        $context = self
-      end
-      expect($context).to be_kind_of(Chasqui::Subscriber)
-    end
-  end
-
   describe '.create_worker' do
     let(:subscriber) { j }
 
@@ -180,6 +147,70 @@ describe Chasqui do
         worker = Chasqui.create_worker subscriber
         expect(worker.new).to be_kind_of(Chasqui::SidekiqWorker)
       end
+    end
+  end
+
+  describe '.subscribe' do
+    before do
+      reset_chasqui
+      Chasqui.config.worker_backend = :resque
+    end
+
+    context 'resque worker subscriptions' do
+      before { Resque.redis.namespace = 'blah' }
+
+      it 'creates subscriptions using the appropriate redis namespace' do
+        sub1 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+        sub2 = Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
+        sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
+
+        queues = Chasqui.redis.smembers "subscribers:com.example.admin"
+        expect(queues.sort).to eq(['blah:queue:app1-queue', 'blah:queue:app2-queue'])
+
+        queues = Chasqui.redis.smembers "subscribers:com.example.video"
+        expect(queues).to eq(['blah:queue:app1-queue'])
+
+        expect(Chasqui.subscriber('app1-queue')).to eq(sub1)
+        expect(Chasqui.subscriber('app2-queue')).to eq(sub2)
+        expect(sub1).to eq(sub3)
+      end
+    end
+
+    context 'sidekiq worker subscriptions' do
+      before do
+        Chasqui.config.worker_backend = :sidekiq
+      end
+
+      it 'creates subscriptions using the appropriate redis namespace' do
+        Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+        queues = Chasqui.redis.smembers "subscribers:com.example.admin"
+        expect(queues.sort).to eq(['queue:app1-queue'])
+
+        Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
+        Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.video'
+        queues = Chasqui.redis.smembers "subscribers:com.example.video"
+        expect(queues.sort).to eq(['foobar:queue:app2-queue'])
+      end
+    end
+
+    it 'returns a subscriber' do
+      subscriber = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+      expect(subscriber).to be_kind_of(Chasqui::Subscriber)
+    end
+
+    it 'yields a subscriber configuration context' do
+      $context = nil
+      Chasqui.subscribe queue: 'foo', channel: 'bar' do
+        $context = self
+      end
+      expect($context).to be_kind_of(Chasqui::Subscriber)
+    end
+  end
+
+  describe '.subscriber_class_name' do
+    it 'transforms queue name into a subscribe class name' do
+      expect(Chasqui.subscriber_class_name('my-queue')).to eq(:Subscriber__my_queue)
+      expect(Chasqui.subscriber_class_name('queue:my-queue')).to eq(:Subscriber__my_queue)
     end
   end
 end
