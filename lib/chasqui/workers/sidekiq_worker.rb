@@ -1,29 +1,33 @@
-class Chasqui::SidekiqWorker
+module Chasqui
+  class SidekiqWorker < Worker
+    class << self
 
-  class << self
+      def namespace
+        Sidekiq.redis { |r| r.respond_to?(:namespace) ? r.namespace : nil }
+      end
 
-    def namespace
-      Sidekiq.redis { |r| r.respond_to?(:namespace) ? r.namespace : nil }
-    end
+      def create(subscriber)
+        find_or_build_worker(subscriber, Chasqui::SidekiqWorker).tap do |worker|
+          worker.class_eval do
+            include Sidekiq::Worker
+            sidekiq_options queue: subscriber.queue
+            @subscriber = subscriber
 
-    def create(subscriber)
-      Class.new(Chasqui::SidekiqWorker) do
-        include Sidekiq::Worker
-        sidekiq_options queue: subscriber.queue
-        @subscriber = subscriber
+            def perform(event)
+              Sidekiq.redis do |r|
+                self.class.subscriber.perform r, event
+              end
+            end
 
-        def perform(event)
-          self.class.subscriber.perform "TODO: redis", event
-        end
+            private
 
-        private
-
-        def self.subscriber
-          @subscriber
+            def self.subscriber
+              @subscriber
+            end
+          end
         end
       end
+
     end
-
   end
-
 end

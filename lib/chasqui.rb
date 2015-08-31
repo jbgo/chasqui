@@ -9,6 +9,7 @@ require "chasqui/config"
 require "chasqui/broker"
 require "chasqui/multi_broker"
 require "chasqui/subscriber"
+require "chasqui/workers/worker"
 require "chasqui/workers/resque_worker"
 require "chasqui/workers/sidekiq_worker"
 

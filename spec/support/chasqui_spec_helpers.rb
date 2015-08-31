@@ -7,7 +7,7 @@ module ChasquiSpecHelpers
 
   def reset_config
     Chasqui.instance_variable_set(:@config, nil)
-    Chasqui.config.logger = open('/dev/null', 'w+')
+    Chasqui.config.logger = './tmp/test.log'
   end
 
   def redis

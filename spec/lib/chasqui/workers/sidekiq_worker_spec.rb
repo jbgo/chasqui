@@ -8,8 +8,9 @@ if sidekiq_supported_ruby_version?
     describe '.create' do
       it 'configures a new worker' do
         worker_class = Chasqui::SidekiqWorker.create(subscriber)
-        expect(worker_class.included_modules).to include(Sidekiq::Worker)
+        expect(worker_class.name).to eq('Chasqui::Subscriber__my_queue')
         expect(worker_class.sidekiq_options).to include('queue' => 'my-queue')
+        expect(worker_class.included_modules).to include(Sidekiq::Worker)
         expect(worker_class.new).to be_kind_of(Chasqui::SidekiqWorker)
       end
     end
