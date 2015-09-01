@@ -2,7 +2,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
 
   def forward_event
     event = receive or return
-    subscribers = subscribers(event)
+    subscribers = subscribers_for(event)
 
     redis.multi do
       subscribers.each do |subscriber_id|
@@ -51,18 +51,27 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def dispatch(event, subscriber_id)
-    worker_backend, queue_name = subscriber_id.split('/', 2)
-    job = { class: "Chasqui::#{Chasqui.subscriber_class_name(queue_name)}", args: [event] }.to_json
-    logger.debug "dispatching event to queue: #{queue_name}, backend: #{worker_backend}, job: #{job}"
-    case worker_backend
+    backend, queue = subscriber_id.split('/', 2)
+    job = build_job queue, event
+
+    logger.debug "dispatching event queue=#{queue} backend=#{backend} job=#{job}"
+
+    case backend
     when 'resque'
-      redis.rpush queue_name, job
+      redis.rpush queue, job
     when 'sidekiq'
-      redis.lpush queue_name, job
+      redis.lpush queue, job
     end
   end
 
-  def subscribers(event)
+  def build_job(queue, event)
+    {
+      class: "Chasqui::#{Chasqui.subscriber_class_name(queue)}",
+      args: [event]
+    }.to_json
+  end
+
+  def subscribers_for(event)
     redis.smembers to_key('subscribers', event['channel'])
   end
 
