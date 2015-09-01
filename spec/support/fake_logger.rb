@@ -3,7 +3,4 @@ class FakeLogger
 
   def info(*args, &block)
   end
-
-  # def warn(*args, &block)
-  # end
 end
