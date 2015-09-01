@@ -176,20 +176,22 @@ describe Chasqui do
       end
     end
 
-    context 'sidekiq worker subscriptions' do
-      before do
-        Chasqui.config.worker_backend = :sidekiq
-      end
+    if sidekiq_supported_ruby_version?
+      context 'sidekiq worker subscriptions' do
+        before do
+          Chasqui.config.worker_backend = :sidekiq
+        end
 
-      it 'creates subscriptions using the appropriate redis namespace' do
-        Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
-        queues = Chasqui.redis.smembers "subscribers:com.example.admin"
-        expect(queues.sort).to eq(['sidekiq/queue:app1-queue'])
+        it 'creates subscriptions using the appropriate redis namespace' do
+          Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+          queues = Chasqui.redis.smembers "subscribers:com.example.admin"
+          expect(queues.sort).to eq(['sidekiq/queue:app1-queue'])
 
-        Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
-        Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.video'
-        queues = Chasqui.redis.smembers "subscribers:com.example.video"
-        expect(queues.sort).to eq(['sidekiq/foobar:queue:app2-queue'])
+          Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
+          Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.video'
+          queues = Chasqui.redis.smembers "subscribers:com.example.video"
+          expect(queues.sort).to eq(['sidekiq/foobar:queue:app2-queue'])
+        end
       end
     end
 

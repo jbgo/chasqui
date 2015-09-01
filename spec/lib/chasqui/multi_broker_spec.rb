@@ -5,7 +5,8 @@ describe Chasqui::MultiBroker do
 
   before do
     reset_chasqui
-    Chasqui.config.worker_backend = :sidekiq
+    Chasqui.config.worker_backend = :resque
+    Resque.redis.namespace = nil
   end
 
   describe '#forward_event' do
@@ -28,10 +29,10 @@ describe Chasqui::MultiBroker do
 
       event = { 'event' => 'foo.bar', 'channel' => 'app1', 'data' => ['A'] }
 
-      job1 = JSON.parse nnredis.rpop('queue:queue1')
+      job1 = JSON.parse nnredis.lpop('queue:queue1')
       expect(job1['args']).to include(event)
 
-      job3 = JSON.parse nnredis.rpop('queue:queue3')
+      job3 = JSON.parse nnredis.lpop('queue:queue3')
       expect(job3['args']).to include(event)
     end
 
@@ -44,7 +45,7 @@ describe Chasqui::MultiBroker do
           Chasqui.config.channel = 'app2'
           Chasqui.publish 'foo.bar', 'A'
 
-          job = JSON.parse nnredis.brpop('queue:queue2')[1]
+          job = JSON.parse nnredis.blpop('queue:queue2')[1]
           expect(job).to include('class' => 'Chasqui::Subscriber__queue2')
           expect(job).to include('args' =>
             [{ 'event' => 'foo.bar', 'channel' => 'app2', 'data' => ['A'] }])
@@ -68,7 +69,7 @@ describe Chasqui::MultiBroker do
       broker.forward_event
       expect(nnredis.llen('queue:queue2')).to eq(1)
 
-      job = JSON.parse nnredis.rpop('queue:queue2')
+      job = JSON.parse nnredis.lpop('queue:queue2')
       expect(job['args']).to include(
         'event' => 'foo', 'channel' => 'app2', 'data' => ['process'])
       expect(nnredis.llen(broker.in_progress_queue)).to eq(0)
