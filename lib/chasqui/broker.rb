@@ -1,19 +1,23 @@
 require 'timeout'
 
 class Chasqui::Broker
-  attr_reader :config
+  attr_reader :config, :redis, :redis_namespace
 
   extend Forwardable
-  def_delegators :@config, :redis, :inbox, :logger
+  def_delegators :@config, :inbox, :logger
 
   ShutdownSignals = %w(INT QUIT ABRT TERM).freeze
 
-  # To prevent unsuspecting clients from blocking forever, the broker uses
-  # it's own private redis connection.
   def initialize
     @shutdown_requested = nil
     @config = Chasqui.config.dup
-    @config.redis = Redis.new @config.redis.client.options
+    @redis_namespace = @config.redis.namespace
+
+    # The broker uses it's own private redis connection for two reasons:
+    # 1. subscribers may use a different (or no) redis namespace than chasqui
+    # 2. sharing the connection with unsuspecting clients could result in
+    #    the broker blocking forever
+    @redis = Redis.new @config.redis.client.options
   end
 
   def start

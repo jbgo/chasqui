@@ -2,7 +2,12 @@ require 'spec_helper'
 
 describe Chasqui::MultiBroker do
   let(:broker) { Chasqui::MultiBroker.new }
-  before { reset_chasqui }
+
+  before do
+    reset_chasqui
+    Chasqui.config.worker_backend = :resque
+    Resque.redis.namespace = nil
+  end
 
   describe '#forward_event' do
     before do
@@ -16,18 +21,18 @@ describe Chasqui::MultiBroker do
       Chasqui.publish 'foo.bar', 'A'
       broker.forward_event
 
-      expect(redis.llen('inbox')).to eq(0)
+      expect(nnredis.llen(broker.inbox_queue)).to eq(0)
 
-      expect(redis.llen('queue:queue1')).to eq(1)
-      expect(redis.llen('queue:queue2')).to eq(0)
-      expect(redis.llen('queue:queue3')).to eq(1)
+      expect(nnredis.llen('queue:queue1')).to eq(1)
+      expect(nnredis.llen('queue:queue2')).to eq(0)
+      expect(nnredis.llen('queue:queue3')).to eq(1)
 
       event = { 'event' => 'foo.bar', 'channel' => 'app1', 'data' => ['A'] }
 
-      job1 = JSON.parse redis.rpop('queue:queue1')
+      job1 = JSON.parse nnredis.lpop('queue:queue1')
       expect(job1['args']).to include(event)
 
-      job3 = JSON.parse redis.rpop('queue:queue3')
+      job3 = JSON.parse nnredis.lpop('queue:queue3')
       expect(job3['args']).to include(event)
     end
 
@@ -40,7 +45,7 @@ describe Chasqui::MultiBroker do
           Chasqui.config.channel = 'app2'
           Chasqui.publish 'foo.bar', 'A'
 
-          job = JSON.parse redis.brpop('queue:queue2')[1]
+          job = JSON.parse nnredis.blpop('queue:queue2')[1]
           expect(job).to include('class' => 'Chasqui::Subscriber__queue2')
           expect(job).to include('args' =>
             [{ 'event' => 'foo.bar', 'channel' => 'app2', 'data' => ['A'] }])
@@ -57,17 +62,17 @@ describe Chasqui::MultiBroker do
       allow(broker.redis).to receive(:smembers).and_raise(Redis::ConnectionError)
 
       expect(-> { broker.forward_event }).to raise_error(Redis::ConnectionError)
-      expect(redis.llen('queue:queue2')).to eq(0)
-      expect(redis.llen(broker.in_progress_queue)).to eq(1)
+      expect(nnredis.llen('queue:queue2')).to eq(0)
+      expect(nnredis.llen(broker.in_progress_queue)).to eq(1)
 
       allow(broker.redis).to receive(:smembers).and_call_original
       broker.forward_event
-      expect(redis.llen('queue:queue2')).to eq(1)
+      expect(nnredis.llen('queue:queue2')).to eq(1)
 
-      job = JSON.parse redis.rpop('queue:queue2')
+      job = JSON.parse nnredis.lpop('queue:queue2')
       expect(job['args']).to include(
         'event' => 'foo', 'channel' => 'app2', 'data' => ['process'])
-      expect(redis.llen(broker.in_progress_queue)).to eq(0)
+      expect(nnredis.llen(broker.in_progress_queue)).to eq(0)
     end
 
     it 'works when queue is empty' do
