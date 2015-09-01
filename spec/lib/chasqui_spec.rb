@@ -165,10 +165,10 @@ describe Chasqui do
         sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
 
         queues = Chasqui.redis.smembers "subscribers:com.example.admin"
-        expect(queues.sort).to eq(['blah:queue:app1-queue', 'blah:queue:app2-queue'])
+        expect(queues.sort).to eq(['resque/blah:queue:app1-queue', 'resque/blah:queue:app2-queue'])
 
         queues = Chasqui.redis.smembers "subscribers:com.example.video"
-        expect(queues).to eq(['blah:queue:app1-queue'])
+        expect(queues).to eq(['resque/blah:queue:app1-queue'])
 
         expect(Chasqui.subscriber('app1-queue')).to eq(sub1)
         expect(Chasqui.subscriber('app2-queue')).to eq(sub2)
@@ -184,12 +184,12 @@ describe Chasqui do
       it 'creates subscriptions using the appropriate redis namespace' do
         Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
         queues = Chasqui.redis.smembers "subscribers:com.example.admin"
-        expect(queues.sort).to eq(['queue:app1-queue'])
+        expect(queues.sort).to eq(['sidekiq/queue:app1-queue'])
 
         Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
         Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.video'
         queues = Chasqui.redis.smembers "subscribers:com.example.video"
-        expect(queues.sort).to eq(['foobar:queue:app2-queue'])
+        expect(queues.sort).to eq(['sidekiq/foobar:queue:app2-queue'])
       end
     end
 

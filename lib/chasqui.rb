@@ -39,7 +39,7 @@ module Chasqui
       register_subscriber(queue, channel).tap do |sub|
         sub.evaluate(&block) if block_given?
         worker = create_worker(sub)
-        redis.sadd "subscribers:#{channel}", to_key(worker.namespace, 'queue', queue)
+        redis.sadd "subscribers:#{channel}", subscriber_id(worker, queue)
       end
     end
 
@@ -66,8 +66,9 @@ module Chasqui
 
     private
 
-    def to_key(*args)
-      args.compact.join(':')
+    def subscriber_id(worker, queue)
+      queue_name = [worker.namespace, 'queue', queue].compact.join(':')
+      "#{config.worker_backend}/#{queue_name}"
     end
 
     def register_subscriber(queue, channel)
