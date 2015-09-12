@@ -131,32 +131,6 @@ describe Chasqui do
     end
   end
 
-  describe '.create_worker' do
-    let(:subscriber) { j }
-
-    it 'raises when no worker backend configured' do
-      expect(-> {
-        Chasqui.create_worker nil
-      }).to raise_error(Chasqui::ConfigurationError)
-    end
-
-    it 'creates a resque worker' do
-      subscriber = FakeSubscriber.new 'resque-queue', 'fake-channel'
-      Chasqui.config.worker_backend = :resque
-      worker = Chasqui.create_worker subscriber
-      expect(worker.new).to be_kind_of(Chasqui::ResqueWorker)
-    end
-
-    if sidekiq_supported_ruby_version?
-      it 'creates a sidekiq worker' do
-        subscriber = FakeSubscriber.new 'sidekiq-queue', 'fake-channel'
-        Chasqui.config.worker_backend = :sidekiq
-        worker = Chasqui.create_worker subscriber
-        expect(worker.new).to be_kind_of(Chasqui::SidekiqWorker)
-      end
-    end
-  end
-
   describe '.subscribe' do
     before do
       reset_chasqui
@@ -171,14 +145,14 @@ describe Chasqui do
         sub2 = Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
         sub3 = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
 
-        queues = Chasqui.redis.smembers "subscribers:com.example.admin"
+        queues = Chasqui.redis.smembers "subscriptions:com.example.admin"
         expect(queues.sort).to eq(['resque/blah:queue:app1-queue', 'resque/blah:queue:app2-queue'])
 
-        queues = Chasqui.redis.smembers "subscribers:com.example.video"
+        queues = Chasqui.redis.smembers "subscriptions:com.example.video"
         expect(queues).to eq(['resque/blah:queue:app1-queue'])
 
-        expect(Chasqui.subscriber('app1-queue')).to eq(sub1)
-        expect(Chasqui.subscriber('app2-queue')).to eq(sub2)
+        expect(Chasqui.subscription('app1-queue')).to eq(sub1)
+        expect(Chasqui.subscription('app2-queue')).to eq(sub2)
         expect(sub1).to eq(sub3)
       end
     end
@@ -191,20 +165,20 @@ describe Chasqui do
 
         it 'creates subscriptions using the appropriate redis namespace' do
           Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
-          queues = Chasqui.redis.smembers "subscribers:com.example.admin"
+          queues = Chasqui.redis.smembers "subscriptions:com.example.admin"
           expect(queues.sort).to eq(['sidekiq/queue:app1-queue'])
 
           Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
           Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.video'
-          queues = Chasqui.redis.smembers "subscribers:com.example.video"
+          queues = Chasqui.redis.smembers "subscriptions:com.example.video"
           expect(queues.sort).to eq(['sidekiq/foobar:queue:app2-queue'])
         end
       end
     end
 
-    it 'returns a subscriber' do
-      subscriber = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
-      expect(subscriber).to be_kind_of(Chasqui::Subscriber)
+    it 'returns a subscription' do
+      subscription = Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+      expect(subscription.subscriber).to be_kind_of(Chasqui::Subscriber)
     end
 
     it 'yields a subscriber configuration context' do
@@ -227,15 +201,15 @@ describe Chasqui do
     end
 
     it 'removes the subscription' do
-      subscriber_id = Chasqui.unsubscribe queue: 'app1-queue', channel: 'com.example.admin'
-      expect(subscriber_id).to eq('resque/ns0:queue:app1-queue')
-      expect(redis.smembers('subscribers:com.example.admin').sort).to eq(['resque/ns0:queue:app2-queue'])
-      expect(redis.smembers('subscribers:com.example.video').sort).to eq(['resque/ns0:queue:app1-queue'])
+      subscription_id = Chasqui.unsubscribe queue: 'app1-queue', channel: 'com.example.admin'
+      expect(subscription_id).to eq('resque/ns0:queue:app1-queue')
+      expect(redis.smembers('subscriptions:com.example.admin').sort).to eq(['resque/ns0:queue:app2-queue'])
+      expect(redis.smembers('subscriptions:com.example.video').sort).to eq(['resque/ns0:queue:app1-queue'])
     end
 
     it 'returns nil for unknown subscriptions' do
-      subscriber_id = Chasqui.unsubscribe queue: 'unknown', channel: 'unknown'
-      expect(subscriber_id).to be nil
+      subscription_id = Chasqui.unsubscribe queue: 'unknown', channel: 'unknown'
+      expect(subscription_id).to be nil
     end
   end
 

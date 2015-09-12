@@ -2,11 +2,11 @@ class Chasqui::MultiBroker < Chasqui::Broker
 
   def forward_event
     event = receive or return
-    subscribers = subscribers_for(event)
+    subscriptions = subscriptions_for(event)
 
     redis.multi do
-      subscribers.each do |subscriber_id|
-        dispatch event, subscriber_id
+      subscriptions.each do |subscription_id|
+        dispatch event, subscription_id
       end
       redis.rpop(in_progress_queue)
     end
@@ -62,8 +62,8 @@ class Chasqui::MultiBroker < Chasqui::Broker
     end
   end
 
-  def dispatch(event, subscriber_id)
-    backend, queue = subscriber_id.split('/', 2)
+  def dispatch(event, subscription_id)
+    backend, queue = subscription_id.split('/', 2)
     job = build_job queue, event
 
     logger.debug "dispatching event queue=#{queue} backend=#{backend} job=#{job}"
@@ -76,8 +76,8 @@ class Chasqui::MultiBroker < Chasqui::Broker
     end
   end
 
-  def subscribers_for(event)
-    redis.smembers to_key('subscribers', event['channel'])
+  def subscriptions_for(event)
+    redis.smembers to_key('subscriptions', event['channel'])
   end
 
   def to_key(*args)

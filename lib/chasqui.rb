@@ -9,6 +9,7 @@ require "chasqui/config"
 require "chasqui/broker"
 require "chasqui/multi_broker"
 require "chasqui/subscriber"
+require "chasqui/subscription"
 require "chasqui/workers/worker"
 require "chasqui/workers/resque_worker"
 require "chasqui/workers/sidekiq_worker"
@@ -35,10 +36,9 @@ module Chasqui
       queue = options.fetch :queue
       channel = options.fetch :channel
 
-      register_subscriber(queue, channel).tap do |sub|
-        sub.evaluate(&block) if block_given?
-        worker = create_worker(sub)
-        redis.sadd "subscribers:#{channel}", subscriber_id(worker, queue)
+      create_subscription(queue, channel).tap do |subscription|
+        subscription.subscriber.evaluate(&block) if block_given?
+        redis.sadd subscription_key(channel), subscription.subscription_id
       end
     end
 
@@ -46,17 +46,16 @@ module Chasqui
       queue = options.fetch :queue
       channel = options.fetch :channel
 
-      sub = subscribers[queue.to_s]
-      if sub
-        worker = create_worker(sub)
-        id = subscriber_id(worker, queue)
-        redis.srem "subscribers:#{channel}", id
-        id
+      subscription = subscriptions[queue.to_s]
+
+      if subscription
+        redis.srem subscription_key(channel), subscription.subscription_id
+        subscription.subscription_id
       end
     end
 
-    def subscriber(queue)
-      subscribers[queue.to_s]
+    def subscription(queue)
+      subscriptions[queue.to_s]
     end
 
     def subscriber_class_name(queue)
@@ -64,37 +63,18 @@ module Chasqui
       "Subscriber__#{queue_name_constant}".to_sym
     end
 
-    def create_worker(subscriber)
-      case config.worker_backend
-      when :resque
-        Chasqui::ResqueWorker.create subscriber
-      when :sidekiq
-        Chasqui::SidekiqWorker.create subscriber
-      else
-        raise ConfigurationError.new(
-          "Please choose a supported worker_backend. Choices: #{supported_worker_backends}")
-      end
-    end
-
     private
 
-    def subscriber_id(worker, queue)
-      queue_name = [worker.namespace, 'queue', queue].compact.join(':')
-      "#{config.worker_backend}/#{queue_name}"
+    def subscription_key(channel)
+      "subscriptions:#{channel}"
     end
 
-    def register_subscriber(queue, channel)
-      subscribers[queue.to_s] ||= Subscriber.new queue, channel
+    def create_subscription(queue, channel)
+      subscriptions[queue.to_s] ||= Subscription.new queue, channel
     end
 
-    def subscribers
-      @subscribers ||= {}
-    end
-
-    SUPPORTED_WORKER_BACKENDS = [:resque, :sidekiq].freeze
-
-    def supported_worker_backends
-      SUPPORTED_WORKER_BACKENDS.join(', ')
+    def subscriptions
+      @subscriptions ||= {}
     end
 
     def build_payload(event, *args)
