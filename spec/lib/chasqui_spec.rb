@@ -111,6 +111,7 @@ describe Chasqui do
         expect(event['event']).to eq('test.event')
         expect(event['channel']).to eq('__default')
         expect(event['data']).to eq(data)
+        expect(event['created_at'].to_f).to be_within(0.01).of(Time.now.to_f)
       end
     end
 
@@ -121,6 +122,12 @@ describe Chasqui do
       expect(event['event']).to eq('test.event')
       expect(event['channel']).to eq('my.app')
       expect(event['data']).to eq(['foo'])
+    end
+
+    it 'supports retries' do
+      Chasqui.publish 'test.event', :foo, :bar, foo: 'bar', job_options: { retry: true }
+      event = JSON.load Chasqui.redis.rpop('inbox')
+      expect(event['retry']).to eq(true)
     end
   end
 

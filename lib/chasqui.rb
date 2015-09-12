@@ -28,8 +28,7 @@ module Chasqui
     end
 
     def publish(event, *args)
-      payload = { event: event, channel: channel, data: args }
-      redis.lpush inbox_queue, payload.to_json
+      redis.lpush inbox_queue, build_payload(event, *args).to_json
     end
 
     def subscribe(options={}, &block)
@@ -83,6 +82,22 @@ module Chasqui
 
     def supported_worker_backends
       SUPPORTED_WORKER_BACKENDS.join(', ')
+    end
+
+    def build_payload(event, *args)
+      opts = extract_job_options!(*args)
+
+      payload = { event: event, channel: channel, data: args }
+      payload[:retry] = opts[:retry] || opts['retry'] if opts
+      payload[:created_at] = Time.now.to_f.to_s
+
+      payload
+    end
+
+    def extract_job_options!(*args)
+      if args.last.kind_of?(Hash)
+        args.last.delete(:job_options)
+      end
     end
   end
 end

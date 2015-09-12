@@ -22,6 +22,18 @@ class Chasqui::MultiBroker < Chasqui::Broker
     to_key inbox
   end
 
+  def build_job(queue, event)
+    {
+      class: "Chasqui::#{Chasqui.subscriber_class_name(queue)}",
+      args: [event],
+      queue: 'my-queue',
+      jid: SecureRandom.hex(12),
+      created_at: (event['created_at'] || Time.now).to_f,
+      enqueued_at: Time.now.to_f,
+      retry: !!event['retry']
+    }.to_json
+  end
+
   private
 
   def receive
@@ -62,13 +74,6 @@ class Chasqui::MultiBroker < Chasqui::Broker
     when 'sidekiq'
       redis.lpush queue, job
     end
-  end
-
-  def build_job(queue, event)
-    {
-      class: "Chasqui::#{Chasqui.subscriber_class_name(queue)}",
-      args: [event]
-    }.to_json
   end
 
   def subscribers_for(event)
