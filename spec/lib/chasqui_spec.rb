@@ -216,6 +216,29 @@ describe Chasqui do
     end
   end
 
+  describe '.unsubscribe' do
+    before do
+      reset_chasqui
+      Chasqui.config.worker_backend = :resque
+      Resque.redis.namespace = 'ns0'
+      Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.admin'
+      Chasqui.subscribe queue: 'app2-queue', channel: 'com.example.admin'
+      Chasqui.subscribe queue: 'app1-queue', channel: 'com.example.video'
+    end
+
+    it 'removes the subscription' do
+      subscriber_id = Chasqui.unsubscribe queue: 'app1-queue', channel: 'com.example.admin'
+      expect(subscriber_id).to eq('resque/ns0:queue:app1-queue')
+      expect(redis.smembers('subscribers:com.example.admin').sort).to eq(['resque/ns0:queue:app2-queue'])
+      expect(redis.smembers('subscribers:com.example.video').sort).to eq(['resque/ns0:queue:app1-queue'])
+    end
+
+    it 'returns nil for unknown subscriptions' do
+      subscriber_id = Chasqui.unsubscribe queue: 'unknown', channel: 'unknown'
+      expect(subscriber_id).to be nil
+    end
+  end
+
   describe '.subscriber_class_name' do
     it 'transforms queue name into a subscribe class name' do
       expect(Chasqui.subscriber_class_name('my-queue')).to eq(:Subscriber__my_queue)

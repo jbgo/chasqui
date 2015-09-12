@@ -42,6 +42,19 @@ module Chasqui
       end
     end
 
+    def unsubscribe(options={}, &block)
+      queue = options.fetch :queue
+      channel = options.fetch :channel
+
+      sub = subscribers[queue.to_s]
+      if sub
+        worker = create_worker(sub)
+        id = subscriber_id(worker, queue)
+        redis.srem "subscribers:#{channel}", id
+        id
+      end
+    end
+
     def subscriber(queue)
       subscribers[queue.to_s]
     end
