@@ -63,11 +63,11 @@ module Chasqui
       "Subscriber__#{queue_name_constant}".to_sym
     end
 
-    private
-
     def subscription_key(channel)
       "subscriptions:#{channel}"
     end
+
+    private
 
     def create_subscription(queue, channel)
       subscriptions[queue.to_s] ||= Subscription.new queue, channel

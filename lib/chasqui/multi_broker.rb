@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class Chasqui::MultiBroker < Chasqui::Broker
 
   def forward_event
@@ -15,11 +17,11 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def in_progress_queue
-    to_key inbox, 'in_progress'
+    with_namespace inbox, 'in_progress'
   end
 
   def inbox_queue
-    to_key inbox
+    with_namespace inbox
   end
 
   def build_job(queue, event)
@@ -77,10 +79,11 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def subscriptions_for(event)
-    redis.smembers to_key('subscriptions', event['channel'])
+    subscription_key = Chasqui.subscription_key event['channel']
+    redis.smembers with_namespace(subscription_key)
   end
 
-  def to_key(*args)
+  def with_namespace(*args)
     ([redis_namespace] + args).join(':')
   end
 
