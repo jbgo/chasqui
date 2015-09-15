@@ -32,9 +32,8 @@ module Chasqui
       redis.lpush inbox_queue, build_payload(event, *args).to_json
     end
 
-    def subscribe(options={}, &block)
+    def subscribe(channel, options={}, &block)
       queue = options.fetch :queue
-      channel = options.fetch :channel
 
       create_subscription(queue, channel).tap do |subscription|
         subscription.subscriber.evaluate(&block) if block_given?
@@ -42,10 +41,8 @@ module Chasqui
       end
     end
 
-    def unsubscribe(options={}, &block)
+    def unsubscribe(channel, options={}, &block)
       queue = options.fetch :queue
-      channel = options.fetch :channel
-
       subscription = subscriptions[queue.to_s]
 
       if subscription
