@@ -28,7 +28,7 @@ Chasqui.configure do |config|
 end
 
 # file: transcoder/app/subscribers/video_subscriber.rb
-Chasqui.subscribe queue: 'transcoder.video', channel: 'com.example.admin' do
+Chasqui.subscribe 'com.example.admin', queue: 'transcoder.video' do
   on 'video.upload' do |video_id|
     begin
       Transcorder.transcode video_url(video_id)
@@ -41,7 +41,7 @@ Chasqui.subscribe queue: 'transcoder.video', channel: 'com.example.admin' do
 end
 
 # file: admin/app/subscribers/video_subscriber.rb
-Chasqui.subscribe queue: 'admin.events', channel: 'com.example.transcoder' do
+Chasqui.subscribe 'com.example.transcoder', queue: 'admin.events' do
 
   on 'transcoder.video.complete' do |video_id|
     video = Video.find video_id

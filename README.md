@@ -88,7 +88,7 @@ Now when you call `Chasqui.publish 'event.name', data, ...`, Chasqui will publis
 
 ```rb
 # file: otherapp/app/subscribers/user_events.rb
-Chasqui.subscribe queue: 'unique_queue_name_for_app', channel: 'com.example.myapp' do
+Chasqui.subscribe 'com.example.myapp', queue: 'unique_queue_name_for_app' do
 
   on 'user.sign-up' do |user_id|
     user = User.find user_id
