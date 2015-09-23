@@ -68,7 +68,7 @@ class Chasqui::Broker
       yield
     end
   rescue TimeoutError
-    logger.warn "broker poll interval exceeded for broker, #{self.class.name}"
+    logger.debug "broker poll interval timeout reached, class: #{self.class.name}"
   end
 
 end
