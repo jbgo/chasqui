@@ -115,6 +115,27 @@ Chasqui.configure do |config|
 end
 ```
 
+## Running the broker
+
+Installing and running Chasqui on Ubuntu using the system ruby.
+
+```sh
+# install required dependencies
+$ sudo apt-get install ruby redis-server
+
+# install chasqui
+$ sudo gem install chasqui --no-ri --no-rdoc
+
+# run chasqui
+$ chasqui
+I, [2015-09-23T00:58:16.630857 #2420]  INFO -- chasqui: broker started with pid 2420
+I, [2015-09-23T00:58:16.631147 #2420]  INFO -- chasqui: configured to fetch events from inbox on #<Redis client v3.2.1 for redis://127.0.0.1:6379/0>
+```
+
+There is also a sample Upstart init script in [examples/upstart.conf](examples/upstart.conf).
+
+If you prefer a different distro or init system, please consider opening a pull-request. Your efforts will be greatly admired and appreciated!
+
 ## Contributing
 
 1. Fork it (https://github.com/[my-github-username]/chasqui/fork)
