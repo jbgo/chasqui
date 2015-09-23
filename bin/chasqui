@@ -5,6 +5,7 @@ require 'rubygems'
 if ENV['CHASQUI_ENV'] == 'test'
   require "codeclimate-test-reporter"
   CodeClimate::TestReporter.start
+  SimpleCov.command_name 'integration'
 end
 
 require 'chasqui/cli'
