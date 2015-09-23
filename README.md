@@ -137,9 +137,12 @@ If you prefer a different distro or init system, please consider opening a pull-
 
 ## Contributing
 
-1. Fork it (https://github.com/[my-github-username]/chasqui/fork)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+* For new functionality, please open an issue for discussion before creating a pull request.
+* For bug fixes, you are welcome to create a pull request without first opening an issue.
+* Except for documentation changes, tests are required with all pull requests.
+* Please be polite and respectful when discussing the project with maintainers and your fellow contributors.
 
+## Code of Conduct
+
+If you are unsure whether or not your communication may be inappropriate, please consult the [Chasqui Code of Conduct](code-of-conduct.md).
+If you even suspect harassment or abuse, please report it to the email address listed in the Code of Conduct.
