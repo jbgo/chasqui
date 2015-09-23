@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.org/jbgo/chasqui.svg?branch=master)](https://travis-ci.org/jbgo/chasqui)
 [![Code Climate](https://codeclimate.com/github/jbgo/chasqui/badges/gpa.svg)](https://codeclimate.com/github/jbgo/chasqui)
-[![Test Coverage](https://codeclimate.com/github/jbgo/chasqui/badges/coverage.svg)](https://codeclimate.com/github/jbgo/chasqui/coverage)
 
 # Chasqui
 
