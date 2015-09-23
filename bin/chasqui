@@ -1,12 +1,6 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
-
-if ENV['CHASQUI_ENV'] == 'test'
-  require "codeclimate-test-reporter"
-  CodeClimate::TestReporter.start
-end
-
 require 'chasqui/cli'
 
 Chasqui::CLI.new(ARGV).run
