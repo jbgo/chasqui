@@ -7,7 +7,10 @@ module Chasqui
       end
 
       def create(subscriber)
+        register_sidekiq_queue subscriber.queue
+
         find_or_build_worker(subscriber, Chasqui::SidekiqWorker).tap do |worker|
+
           worker.class_eval do
             include Sidekiq::Worker
             sidekiq_options queue: subscriber.queue
@@ -26,6 +29,12 @@ module Chasqui
             end
           end
         end
+      end
+
+      private
+
+      def register_sidekiq_queue queue_name
+        Sidekiq.redis { |r| r.sadd 'queues', queue_name }
       end
 
     end
