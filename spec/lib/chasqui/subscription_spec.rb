@@ -9,6 +9,9 @@ describe Chasqui::Subscription do
   describe '#worker' do
     it 'raises when no worker backend configured' do
       Chasqui.config.worker_backend = nil
+      allow_any_instance_of(Chasqui::Subscription).to receive(
+        :worker_backend).and_return(nil)
+
       expect(-> {
         new_subscription.worker
       }).to raise_error(Chasqui::ConfigurationError)

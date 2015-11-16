@@ -18,7 +18,6 @@ module Chasqui
     end
 
     def worker
-      # TODO How can we store this in an instance variable without breaking things?
       case worker_backend
       when :resque
         Chasqui::ResqueWorker.create subscriber
@@ -33,7 +32,15 @@ module Chasqui
     private
 
     def worker_backend
-      Chasqui.config.worker_backend
+      Chasqui.config.worker_backend || find_first_available_worker_backend
+    end
+
+    def find_first_available_worker_backend
+      if Object.const_defined? :Sidekiq
+        :sidekiq
+      elsif Object.const_defined? :Resque
+        :resque
+      end
     end
 
     SUPPORTED_WORKER_BACKENDS = [:resque, :sidekiq].freeze
