@@ -3,7 +3,7 @@
 
 # Chasqui
 
-Chasqui is a simple, lightweight, persistent implementation of the publish-subscribe (pub/sub)
+Chasqui is a simple, lightweight, persistent implementation of the publish-subscribe (pub-sub)
 messaging pattern for service oriented architectures.
 
 Chasqui delivers messages to subscribers in a Resque-compatible format. If you are already
@@ -26,7 +26,7 @@ Or install it yourself as:
 ## Dependencies
 
 Chasqui uses Redis to queue events and manage subscriptions. You can install
-redis with your favorite package manager, such as homebrew, yum, or apt, or if
+Redis with your favorite package manager, such as homebrew, yum, or apt, or if
 you prefer, you can run `vagrant up` to run Redis in a virtual machine.
 
 ## Quick Start
@@ -39,8 +39,8 @@ client can both publish events and register subscribers.
 
     chasqui -r redis://localhost:6379/0 -q my-app
 
-Your broker must use the same redis connection as your sidekiq (or resque)
-workers. For a list of available broker options, run `chasqui --help`.
+Your broker must use the same Redis connection as your Sidekiq (or Resque)
+workers. For a list of available broker options, see `chasqui --help`.
 
 ### Publish events
 
@@ -48,8 +48,8 @@ Publishing events is simple.
 
     # file: publisher.rb
     require 'chasqui'
-    Chasqui.publish 'user.sign-up', 'Luke Skywalker'
-    Chasqui.publish 'user.cancel', 'Dart Vader', 'invalid use of the force'
+    Chasqui.publish 'user.sign-up', 'Darth Vader'
+    Chasqui.publish 'user.cancel', 'Luke Skywalker', 'May the force be with you.'
 
 Be sure to run the publisher, broker, and subscribers in separate terminal
 windows.
@@ -58,11 +58,11 @@ windows.
 
 ### Subscribe to events
 
-Subscribing to events is also simple. The following example tells chasqui to
-forward events to the subscriber's 'my-app' queue, for which chasqui will
-generate the appropriate worker class. Within the subscriber block, you define
-one or more `on` blocks in which you place your application logic for handling
-an event.
+Subscribing to events is also simple. The following example tells Chasqui to
+forward events to this subscriber's `my-app` queue. Chasqui will detect whether
+you are using Sidekiq or Resque and generate an appropriate worker class for you.
+Within the subscriber block, you use the `on(event_name)` method to register blocks
+of code to handle that event.
 
     # file: subscriber1.rb
     require 'chasqui'
@@ -82,9 +82,15 @@ an event.
 You can have as many subscribers as you like, but __each subscriber must have
 its own unique queue name__.
 
+### Running Sidekiq subscribers
+
 Here is how you can run the subscriber as a sidekiq worker:
 
     sidekiq -r subscriber.rb
+
+For more information on running Sidekiq, please refer to the [Sidekiq documentation](https://github.com/mperham/sidekiq).
+
+### Running Resque subscribers
 
 To run the resque worker, you first need to create a Rakefile.
 
@@ -104,16 +110,23 @@ Then you can run the resque worker to start processing events.
 
     rake resque:work
 
+For more information on running Resque workers, please refer to the [resque documentation](https://github.com/resque/resque).
+
 ## Why Chasqui?
 
-* Reduces coupling between applications
-* Integrates with the popular sidekiq and resque background worker libraries
-* Queues events for registered subscribers even if a subscriber is unavailable
+* Reduces coupling between applications.
+* Simple to learn and use.
+* Integrates with the popular Sidekiq and Resque background worker libraries.
+* Queues events for registered subscribers even if a subscriber is unavailable.
+* Subscribers can benefit from Sidekiq's built-in retry functionality for failed jobs.
 
 ## Limitations
 
-In order for chasqui to work properly, the publisher, broker, and all
-subscribers must connect to the same Redis database.
+In order for Chasqui to work properly, the publisher, broker, and all
+subscribers must connect to the same Redis database. Chasqui is intentionally
+simple and may not have all of the features you would expect from a messaging
+system. If Chasqui is missing a feature that you simply cannot live without, please
+consider [opening a GitHub issue]() to discuss your feature.
 
 ## Contributing
 
