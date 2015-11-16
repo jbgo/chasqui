@@ -13,9 +13,9 @@ describe Chasqui::MultiBroker do
   describe '#forward_event' do
     before do
       Chasqui.config.channel = 'app1'
-      Chasqui.subscribe 'app1', queue: 'queue1'
-      Chasqui.subscribe 'app2', queue: 'queue2'
-      Chasqui.subscribe 'app1', queue: 'queue3'
+      Chasqui.subscribe channel: 'app1', queue: 'queue1'
+      Chasqui.subscribe channel: 'app2', queue: 'queue2'
+      Chasqui.subscribe channel: 'app1', queue: 'queue3'
     end
 
     it 'places the event on all subscriber queues' do

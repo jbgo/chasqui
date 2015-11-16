@@ -1,8 +1,8 @@
 module ChasquiSpecHelpers
 
   def reset_chasqui
-    reset_config
     flush_redis
+    reset_config
   end
 
   def reset_config

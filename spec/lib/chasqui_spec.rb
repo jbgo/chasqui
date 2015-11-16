@@ -134,16 +134,27 @@ describe Chasqui do
   describe '.subscribe' do
     before do
       reset_chasqui
+      Resque.redis.namespace = :resque
       Chasqui.config.worker_backend = :resque
+    end
+
+    context 'with defaults' do
+      it 'subscribes to events on the default channel' do
+        sub = Chasqui.subscribe queue: 'my-queue'
+
+        channel = Chasqui.config.channel
+        queues = Chasqui.redis.smembers Chasqui.subscription_key(channel)
+        expect(queues).to eq(['resque/resque:queue:my-queue'])
+      end
     end
 
     context 'resque worker subscriptions' do
       before { Resque.redis.namespace = 'blah' }
 
       it 'creates subscriptions using the appropriate redis namespace' do
-        sub1 = Chasqui.subscribe 'com.example.admin', queue: 'app1-queue'
-        sub2 = Chasqui.subscribe 'com.example.admin', queue: 'app2-queue'
-        sub3 = Chasqui.subscribe 'com.example.video', queue: 'app1-queue'
+        sub1 = Chasqui.subscribe channel: 'com.example.admin', queue: 'app1-queue'
+        sub2 = Chasqui.subscribe channel: 'com.example.admin', queue: 'app2-queue'
+        sub3 = Chasqui.subscribe channel: 'com.example.video', queue: 'app1-queue'
 
         queues = Chasqui.redis.smembers Chasqui.subscription_key("com.example.admin")
         expect(queues.sort).to eq(['resque/blah:queue:app1-queue', 'resque/blah:queue:app2-queue'])
@@ -164,12 +175,12 @@ describe Chasqui do
         end
 
         it 'creates subscriptions using the appropriate redis namespace' do
-          Chasqui.subscribe 'com.example.admin', queue: 'app1-queue'
+          Chasqui.subscribe channel: 'com.example.admin', queue: 'app1-queue'
           queues = Chasqui.redis.smembers Chasqui.subscription_key("com.example.admin")
           expect(queues.sort).to eq(['sidekiq/queue:app1-queue'])
 
           Sidekiq.redis = { url: redis.client.options[:url], namespace: 'foobar' }
-          Chasqui.subscribe 'com.example.video', queue: 'app2-queue'
+          Chasqui.subscribe channel: 'com.example.video', queue: 'app2-queue'
           queues = Chasqui.redis.smembers Chasqui.subscription_key("com.example.video")
           expect(queues.sort).to eq(['sidekiq/foobar:queue:app2-queue'])
         end
@@ -177,13 +188,13 @@ describe Chasqui do
     end
 
     it 'returns a subscription' do
-      subscription = Chasqui.subscribe 'com.example.admin', queue: 'app1-queue'
+      subscription = Chasqui.subscribe channel: 'com.example.admin', queue: 'app1-queue'
       expect(subscription.subscriber).to be_kind_of(Chasqui::Subscriber)
     end
 
     it 'yields a subscriber configuration context' do
       $context = nil
-      Chasqui.subscribe 'bar', queue: 'foo' do
+      Chasqui.subscribe channel: 'bar', queue: 'foo' do
         $context = self
       end
       expect($context).to be_kind_of(Chasqui::Subscriber)
@@ -195,9 +206,9 @@ describe Chasqui do
       reset_chasqui
       Chasqui.config.worker_backend = :resque
       Resque.redis.namespace = 'ns0'
-      Chasqui.subscribe 'com.example.admin', queue: 'app1-queue'
-      Chasqui.subscribe 'com.example.admin', queue: 'app2-queue'
-      Chasqui.subscribe 'com.example.video', queue: 'app1-queue'
+      Chasqui.subscribe channel: 'com.example.admin', queue: 'app1-queue'
+      Chasqui.subscribe channel: 'com.example.admin', queue: 'app2-queue'
+      Chasqui.subscribe channel: 'com.example.video', queue: 'app1-queue'
     end
 
     it 'removes the subscription' do
