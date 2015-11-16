@@ -125,8 +125,9 @@ For more information on running Resque workers, please refer to the [resque docu
 In order for Chasqui to work properly, the publisher, broker, and all
 subscribers must connect to the same Redis database. Chasqui is intentionally
 simple and may not have all of the features you would expect from a messaging
-system. If Chasqui is missing a feature that you simply cannot live without, please
-consider [opening a GitHub issue]() to discuss your feature.
+system. If Chasqui is missing a feature that you think it should have, please
+consider [opening a GitHub issue](https://github.com/jbgo/chasqui/issues/new) to
+discuss your feature proposal. 
 
 ## Contributing
 
