@@ -9,51 +9,11 @@ messaging pattern for service oriented architectures.
 Chasqui delivers messages to subscribers in a Resque-compatible format. If you are already
 using Resque and/or Sidekiq, Chasqui will make a wonderful companion to your architecture.
 
-## Why do you need Chasqui?
-
-* To reduce coupling between applications
-* To process, monitor, and retry messages idependent of request cycles
-
-## Design
-
-Chasqui is designed with reliability in mind.
-Failure is expected and planned for in the design.
-
-Chasqui uses Redis to create persistent queues. Chasqui does not use the Redis Pub/Sub feature
-because it cannot ensure delivery of messages, especially when subscribers are not running.
-
-Chasqui consists of two components, a client and a server.
-The client provides a simple interface for publishing messages. The client places messages
-on a persistent queue, called an inbox, where they wait for further processing.
-The server reads messages from the inbox and places them on the queues of each subscriber.
-The server will create queues for subscribers if the queues do not exist.
-
-The advantage of this design is that messages are not lost when the chasqui server or the
-chasqui subscribers are not running.
-
-## Is Chasqui the best choice for you?
-
-Chasqui is perfect for you if your current architecture meets all of the following criteria
-listed below.
-
-1. You have a service oriented architecture of some kind.
-2. You primarily use resque and/or sidekiq to process jobs already.
-3. You want a simple Pub/Sub solution with minimal setup and maintenance.
-4. Your organization or traffic volume is not high enough to warrant a more complex solution.
-
-If any of the above are not true for you, you may want to consider other available solutions.
-This website maintains a list of alternatives for you to consider: http://queues.io/
-
-If Chasqui is not right for you, then please use another solution. I designed Chasqui to
-solve a specific problem for a particular scale and company size.
-
 ## Installation
 
 Add this line to your application's Gemfile:
 
-```ruby
-gem 'chasqui'
-```
+    gem 'chasqui'
 
 And then execute:
 
@@ -63,77 +23,97 @@ Or install it yourself as:
 
     $ gem install chasqui
 
-## Publishing events
+## Dependencies
+
+Chasqui uses Redis to queue events and manage subscriptions. You can install
+redis with your favorite package manager, such as homebrew, yum, or apt, or if
+you prefer, you can run `vagrant up` to run Redis in a virtual machine.
+
+## Quick Start
+
+Chasqui consistents of two components - a client and a broker. The broker's
+responsibility is to forward published events to registered subscribers. The
+client can both publish events and register subscribers.
+
+### Start the broker
+
+    chasqui -r redis://localhost:6379/0 -q my-app
+
+Your broker must use the same redis connection as your sidekiq (or resque)
+workers. For a list of available broker options, run `chasqui --help`.
+
+### Publish events
 
 Publishing events is simple.
 
-```rb
-Chasqui.publish 'user.sign-up', user_id
-```
+    # file: publisher.rb
+    require 'chasqui'
+    Chasqui.publish 'user.sign-up', 'Luke Skywalker'
+    Chasqui.publish 'user.cancel', 'Dart Vader', 'invalid use of the force'
 
-To prevent conflicts with other applications, you can choose a unique channel for your events.
+Be sure to run the publisher, broker, and subscribers in separate terminal
+windows.
 
-```rb
-# config/initializers/chasqui.rb
-Chasqui.configure do |config|
-  config.channel = 'com.example.myapp'
-end
-```
+    ruby publisher.rb
 
-Now when you call `Chasqui.publish 'event.name', data, ...`, Chasqui will publish the event
-`com.example.myapp.user.sign-up`.
+### Subscribe to events
 
-## Subscribing to events
+Subscribing to events is also simple. The following example tells chasqui to
+forward events to the subscriber's 'my-app' queue, for which chasqui will
+generate the appropriate worker class. Within the subscriber block, you define
+one or more `on` blocks in which you place your application logic for handling
+an event.
 
-```rb
-# file: otherapp/app/subscribers/user_events.rb
-Chasqui.subscribe 'com.example.myapp', queue: 'unique_queue_name_for_app' do
+    # file: subscriber1.rb
+    require 'chasqui'
 
-  on 'user.sign-up' do |user_id|
-    user = User.find user_id
-    UserMailer.signup(user).deliver
-  end
+    Chasqui.subscribe queue: 'my-app' do
 
-  on 'user.cancel' do |user_id, reason|
-    user = User.find user_id
-    AdminMailer.user_cancelled(user, reason).deliver
-    user.archive!
-  end
+      on 'user.sign-up' do |user_id|
+        # do something when the user signs up
+      end
 
-end
-```
+      on 'user.cancel' do |user_id, reason|
+        # do something else when user cancels
+      end
 
-## Configure Chasqui
+    end
 
-```rb
-Chasqui.configure do |config|
-  config.channel = 'com.example.transcoder'
-  config.redis = ENV.fetch('REDIS_URL')
-  config.workers = :sidekiq # or :resque
-  ...
-end
-```
+You can have as many subscribers as you like, but __each subscriber must have
+its own unique queue name__.
 
-## Running the broker
+Here is how you can run the subscriber as a sidekiq worker:
 
-Installing and running Chasqui on Ubuntu using the system ruby.
+    sidekiq -r subscriber.rb
 
-```sh
-# install required dependencies
-$ sudo apt-get install ruby redis-server
+To run the resque worker, you first need to create a Rakefile.
 
-# install chasqui
-$ sudo gem install chasqui --no-ri --no-rdoc
+    # Rakefile
+    require 'resque'
+    require 'resque/tasks'
 
-# run chasqui
-$ chasqui
-I, [2015-09-23T00:58:16.630857 #2420]  INFO -- chasqui: broker started with pid 2420
-I, [2015-09-23T00:58:16.631147 #2420]  INFO -- chasqui: configured to fetch events from inbox on #<Redis client v3.2.1 for redis://127.0.0.1:6379/0>
-```
+    task 'resque:setup' => ['chasqui:subscriber']
 
-There is also a sample Upstart init script in [examples/upstart.conf](examples/upstart.conf).
+    namespace :chasqui do
+      task :subscriber do
+        require './subscriber.rb'
+      end
+    end
 
-If you prefer a different distro or init system, please consider opening a pull-request. Your efforts will be greatly admired and appreciated!
+Then you can run the resque worker to start processing events.
+
+    rake resque:work
+
+## Why Chasqui?
+
+* Reduces coupling between applications
+* Integrates with the popular sidekiq and resque background worker libraries
+* Queues events for registered subscribers even if a subscriber is unavailable
+
+## Limitations
+
+In order for chasqui to work properly, the publisher, broker, and all
+subscribers must connect to the same Redis database.
 
 ## Contributing
 
