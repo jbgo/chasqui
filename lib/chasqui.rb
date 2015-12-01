@@ -79,16 +79,19 @@ module Chasqui
       opts = extract_job_options!(*args)
 
       payload = { event: event, channel: channel, data: args }
-      payload[:retry] = opts[:retry] || opts['retry'] if opts
+      payload[:retry] = fetch_option(opts, :retry, true) || false
       payload[:created_at] = Time.now.to_f.to_s
 
       payload
     end
 
     def extract_job_options!(*args)
-      if args.last.kind_of?(Hash)
-        args.last.delete(:job_options)
-      end
+      opts = args.last.delete(:job_options) if args.last.kind_of?(Hash)
+      opts ||= {}
+    end
+
+    def fetch_option(opts, key, default=nil)
+      opts.fetch key.to_sym, opts.fetch(key.to_s, default)
     end
   end
 end

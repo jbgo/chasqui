@@ -32,7 +32,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
       jid: SecureRandom.hex(12),
       created_at: (event['created_at'] || Time.now).to_f,
       enqueued_at: Time.now.to_f,
-      retry: !!event['retry']
+      retry: event['retry']
     }.to_json
   end
 

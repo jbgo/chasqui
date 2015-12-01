@@ -28,7 +28,13 @@ describe Chasqui::MultiBroker do
       expect(nnredis.llen('queue:queue2')).to eq(0)
       expect(nnredis.llen('queue:queue3')).to eq(1)
 
-      event = { 'event' => 'foo.bar', 'channel' => 'app1', 'data' => ['A'], 'created_at' => Time.now.to_f.to_s }
+      event = {
+        'event' => 'foo.bar',
+        'channel' => 'app1',
+        'data' => ['A'],
+        'created_at' => Time.now.to_f.to_s,
+        'retry' => true
+      }
 
       job1 = JSON.parse nnredis.lpop('queue:queue1')
       expect(job1['args']).to include(event)
@@ -48,8 +54,16 @@ describe Chasqui::MultiBroker do
 
           job = JSON.parse nnredis.blpop('queue:queue2')[1]
           expect(job).to include('class' => 'Chasqui::Subscriber__queue2')
-          expect(job).to include('args' =>
-            [{ 'event' => 'foo.bar', 'channel' => 'app2', 'data' => ['A'], 'created_at' => Time.now.to_f.to_s }])
+
+          event = {
+            'event' => 'foo.bar',
+            'channel' => 'app2',
+            'data' => ['A'],
+            'created_at' => Time.now.to_f.to_s,
+            'retry' => true
+          }
+
+          expect(job).to include('args' => [event])
         end
       ensure
         thread.kill
@@ -72,7 +86,12 @@ describe Chasqui::MultiBroker do
 
       job = JSON.parse nnredis.lpop('queue:queue2')
       expect(job['args']).to include(
-        'event' => 'foo', 'channel' => 'app2', 'data' => ['process'], 'created_at' => Time.now.to_f.to_s)
+        'event' => 'foo',
+        'channel' => 'app2',
+        'data' => ['process'],
+        'created_at' => Time.now.to_f.to_s,
+        'retry' => true
+      )
       expect(nnredis.llen(broker.in_progress_queue)).to eq(0)
     end
 
@@ -93,7 +112,7 @@ describe Chasqui::MultiBroker do
       expect(job['jid']).to match(/^[0-9a-f]{24}/i)
       expect(job['created_at']).to be_within(0.01).of(Time.now.to_f)
       expect(job['enqueued_at']).to be_within(0.01).of(Time.now.to_f)
-      expect(job['retry']).to eq(false)
+      expect(job['retry']).to be nil
     end
 
     it 'uses the event created_at time' do
@@ -110,7 +129,7 @@ describe Chasqui::MultiBroker do
       expect(job['retry']).to be false
 
       job = JSON.parse broker.build_job('my-queue', 'retry' => nil)
-      expect(job['retry']).to be false
+      expect(job['retry']).to be nil
     end
   end
 end
