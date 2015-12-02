@@ -1,67 +1,81 @@
 require 'spec_helper'
 
 describe Chasqui::Subscriber do
-  let(:subscriber) { Chasqui::Subscriber.new 'my-queue', 'my.channel' }
+  let(:subscriber_class) { Class.new(Chasqui::Subscriber) }
+  let(:subscriber) { subscriber_class.new }
+  let(:redis) { Redis.new }
 
-  it { expect(subscriber.queue).to eq('my-queue') }
-  it { expect(subscriber.channel).to eq('my.channel') }
-
-  describe '#on' do
-    it 'registers the event handlers' do
-      subscriber.on('foo') { |foo| foo }
-      subscriber.on('zig.zag') { |*args| args }
-
-      pattern = subscriber.matching_handler_patterns_for('foo').first
-      expect(subscriber.call_handler(pattern, 'bar')).to eq('bar')
-
-      pattern = subscriber.matching_handler_patterns_for('zig.zag').first
-      expect(subscriber.call_handler(pattern, 1, 2, 3, 4)).to eq([1, 2, 3, 4])
+  describe '#redis' do
+    context 'default' do
+      it { expect(subscriber.redis).to eq(Chasqui.redis) }
     end
 
-    it 'raises when registering duplicate handlers' do
-      subscriber.on('foo') { |foo| foo }
-      expect(-> {
-        subscriber.on('foo') { |a, b| a + b }
-      }).to raise_error(Chasqui::HandlerAlreadyRegistered)
+    context 'custom' do
+      let(:redis) { Redis.new }
+      let(:subscriber)  { subscriber_class.new redis: redis }
+      it { expect(subscriber.redis.object_id).to eq(redis.object_id) }
     end
   end
 
-  describe '#matching_handler_patterns_for' do
-    it 'always returns an array' do
-      expect(subscriber.matching_handler_patterns_for('unknown')).to eq([])
+  describe '#logger' do
+    context 'default' do
+      it { expect(subscriber.logger).to eq(Chasqui.logger) }
     end
 
-    it 'matches single event' do
-      p = Proc.new { }
-      subscriber.on('foo', &p)
-      expect(subscriber.matching_handler_patterns_for('foo')).to eq([/\Afoo\z/])
+    context 'custom' do
+      let(:logger) { FakeLogger.new }
+      let(:subscriber) { subscriber_class.new logger: logger }
+      it { expect(subscriber.logger).to eq(logger) }
+    end
+  end
+
+  describe '#channel' do
+    before { subscriber.class.channel 'some.channel' }
+
+    context 'default' do
+      it { expect(subscriber.channel).to eq('some.channel') }
     end
 
-    it 'matches wildcards' do
-      p = 6.times.map { Proc.new { } }
-      subscriber.on('foo*', &p[0])
-      subscriber.on('bar', &p[1])
-      subscriber.on('*bar', &p[2])
-      subscriber.on('*', &p[3])
-      subscriber.on('*a*', &p[4])
-      subscriber.on('*z*', &p[5])
-      expect(subscriber.matching_handler_patterns_for('foo.bar')).to eq([
-        /\Afoo.*\z/,
-        /\A.*bar\z/,
-        /\A.*\z/,
-        /\A.*a.*\z/
-      ])
+    context 'with default prefix' do
+      before do
+        Chasqui.config.channel_prefix = 'prefix'
+        subscriber.class.channel 'some.channel'
+      end
+
+      it { expect(subscriber.channel).to eq('prefix.some.channel') }
+    end
+
+    context 'with custom prefix' do
+      before { Chasqui.config.channel_prefix = 'prefix' }
+
+      it 'uses the custom prefix' do
+        subscriber.class.channel 'another.channel', prefix: 'custom'
+        expect(subscriber.channel).to eq('custom.another.channel')
+      end
+
+      it 'removes the prefix' do
+        subscriber.class.channel 'another.channel', prefix: nil
+        expect(subscriber.channel).to eq('another.channel')
+      end
+    end
+  end
+
+  describe '#queue' do
+    context 'default' do
+      it { expect(subject.queue).to eq(Chasqui.default_queue) }
+    end
+
+    context 'custom' do
+      before { subject.class.queue 'custom-queue' }
+      it { expect(subject.queue).to eq('custom-queue') }
     end
   end
 
   describe '#perform' do
-    it 'calls the matching event handlers' do
-      calls = []
-      subscriber.on('foo.bar') { |a, b| calls << a + b }
-      subscriber.on('foo.*') { |a, b| calls << a ** b }
-      subscriber.perform(redis, { 'event' => 'foo.bar', 'data' => [3, 4] })
-      expect(calls.sort).to eq([7, 81])
+    it 'is not implemented' do
+      expect(-> {
+        subscriber.perform foo: 'bar'
+      }).to raise_error(NotImplementedError)
     end
   end
-
 end

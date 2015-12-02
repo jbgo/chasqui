@@ -5,7 +5,7 @@ if sidekiq_supported_ruby_version?
   describe Chasqui::SidekiqWorker do
     let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
 
-    describe '.create' do
+    pending '.create' do
       before { flush_redis }
 
       it 'configures a new worker' do
@@ -18,7 +18,7 @@ if sidekiq_supported_ruby_version?
       end
     end
 
-    describe '#perform' do
+    pending '#perform' do
       let(:worker_class) { Chasqui::SidekiqWorker.create(subscriber) }
 
       it 'delegates to the subscriber' do

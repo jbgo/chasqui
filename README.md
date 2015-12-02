@@ -48,8 +48,7 @@ Publishing events is simple.
 
     # file: publisher.rb
     require 'chasqui'
-    Chasqui.publish 'user.sign-up', 'Darth Vader'
-    Chasqui.publish 'user.cancel', 'Luke Skywalker', 'May the force be with you.'
+    Chasqui.publish 'user.sign-up', name: 'Darth Vader'
 
 Be sure to run the publisher, broker, and subscribers in separate terminal
 windows.
@@ -58,29 +57,24 @@ windows.
 
 ### Subscribe to events
 
-Subscribing to events is also simple. The following example tells Chasqui to
-forward events to this subscriber's `my-app` queue. Chasqui will detect whether
-you are using Sidekiq or Resque and generate an appropriate worker class for you.
-Within the subscriber block, you use the `on(event_name)` method to register blocks
-of code to handle that event.
+Subscribing to events is also simple. In the following example, we create a
+subscriber to handle events published to the `user.sign-up` channel.
 
     # file: subscriber1.rb
     require 'chasqui'
 
-    Chasqui.subscribe queue: 'my-app' do
+    class UserSignUpSubscriber < Chasqui::Subscriber
+      channel 'user.sign-up'
 
-      on 'user.sign-up' do |user_id|
-        # do something when the user signs up
+      def perform(payload)
+        # Do something when the user signs up.
+        #
+        # User.create(name: payload[:user])
+        #  => #<User:0X00fe346 @name="Darth Vader">
       end
-
-      on 'user.cancel' do |user_id, reason|
-        # do something else when user cancels
-      end
-
     end
 
-You can have as many subscribers as you like, but __each subscriber must have
-its own unique queue name__.
+For advanced subscriber usage and configuration, see __TODO__.
 
 ### Running Sidekiq subscribers
 

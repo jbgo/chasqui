@@ -1,9 +1,9 @@
 module Chasqui
 
   Defaults = {
+    default_queue: 'chasqui-subscribers',
     inbox_queue: 'inbox',
     redis_namespace: 'chasqui',
-    publish_channel: '__default',
     broker_poll_interval: 3
   }.freeze
 
@@ -12,7 +12,8 @@ module Chasqui
 
   CONFIG_SETTINGS = [
     :broker_poll_interval,
-    :channel,
+    :channel_prefix,
+    :default_queue,
     :inbox_queue,
     :logger,
     :redis,
@@ -20,8 +21,8 @@ module Chasqui
   ]
 
   class Config < Struct.new(*CONFIG_SETTINGS)
-    def channel
-      self[:channel] ||= Defaults.fetch(:publish_channel)
+    def default_queue
+      self[:default_queue] ||= Defaults.fetch(:default_queue)
     end
 
     def inbox_queue

@@ -4,7 +4,7 @@ require 'resque'
 describe Chasqui::ResqueWorker do
   let(:subscriber) { FakeSubscriber.new 'my-queue', 'my.channel'}
 
-  describe '.create' do
+  pending '.create' do
     it 'configures a new worker' do
       worker_class = Chasqui::ResqueWorker.create(subscriber)
       expect(worker_class.name).to eq('Chasqui::Subscriber__my_queue')
@@ -13,7 +13,7 @@ describe Chasqui::ResqueWorker do
     end
   end
 
-  describe '.perform' do
+  pending '.perform' do
     let(:worker) { Chasqui::ResqueWorker.create(subscriber) }
 
     it 'delegates to the subscriber' do

@@ -9,15 +9,21 @@ require "chasqui/config"
 require "chasqui/broker"
 require "chasqui/multi_broker"
 require "chasqui/subscriber"
-require "chasqui/subscription"
+require "chasqui/subscribers/inline_subscriber"
+require "chasqui/subscriptions"
+require "chasqui/subscriptions/redis_subscriptions"
 require "chasqui/workers/worker"
 require "chasqui/workers/resque_worker"
 require "chasqui/workers/sidekiq_worker"
 
 module Chasqui
+
+  class ConfigurationError < StandardError; end
+
   class << self
     extend Forwardable
     def_delegators :config, *CONFIG_SETTINGS
+    def_delegators :subscriptions, :register, :unregister
 
     def configure(&block)
       yield config
@@ -27,57 +33,53 @@ module Chasqui
       @config ||= Config.new
     end
 
-    def publish(event, *args)
-      redis.lpush inbox_queue, build_payload(event, *args).to_json
+    def publish(channel, *args)
+      redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
-    def subscribe(options={}, &block)
-      queue = options.fetch :queue
-      channel = options.fetch :channel, config.channel
-
-      create_subscription(queue, channel).tap do |subscription|
-        subscription.subscriber.evaluate(&block) if block_given?
-        redis.sadd subscription_key(channel), subscription.subscription_id
-      end
+    def subscribe(channel, queue=Chasqui.default_queue, &block)
+      subscriber = InlineSubscriber.create channel, queue, &block
+      register subscriber
     end
+
+      # create_subscription(queue, channel).tap do |subscription|
+      #   subscription.subscriber.evaluate(&block) if block_given?
+      #   redis.sadd subscription_key(channel), subscription.subscription_id
+      # end
+    # end
 
     def unsubscribe(channel, options={}, &block)
       queue = options.fetch :queue
-      subscription = subscriptions[queue.to_s]
 
-      if subscription
-        redis.srem subscription_key(channel), subscription.subscription_id
-        subscription.subscription_id
-      end
+      subscriptions.
+        find(channel, queue).
+        select { |s| s.kind_of?(InlineSubscriber) }.
+        each { |s| subscriptions.unregister s }
+
+      # if subscription
+      #   redis.srem subscription_key(channel), subscription.subscription_id
+      #   subscription.subscription_id
+      # end
     end
 
-    def subscription(queue)
-      subscriptions[queue.to_s]
-    end
+    # def subscription(queue)
+    #   subscriptions[queue.to_s]
+    # end
 
-    def subscriber_class_name(queue)
-      queue_name_constant = queue.split(':').last.gsub(/[^\w]/, '_')
-      "Subscriber__#{queue_name_constant}".to_sym
-    end
+    # def subscription_key(channel)
+    #   "subscriptions:#{channel}"
+    # end
 
-    def subscription_key(channel)
-      "subscriptions:#{channel}"
+    def subscriptions
+      @subscriptions ||= Subscriptions.new
     end
 
     private
 
-    def create_subscription(queue, channel)
-      subscriptions[queue.to_s] ||= Subscription.new queue, channel
-    end
-
-    def subscriptions
-      @subscriptions ||= {}
-    end
-
-    def build_payload(event, *args)
+    def build_event(channel, *args)
       opts = extract_job_options!(*args)
 
-      payload = { event: event, channel: channel, data: args }
+      payload = { channel: channel, data: args }
       payload[:retry] = fetch_option(opts, :retry, true) || false
       payload[:created_at] = Time.now.to_f.to_s
 

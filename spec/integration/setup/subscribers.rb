@@ -1,14 +1,28 @@
-def log_event subscriber, args
-  event = subscriber.current_event
-  payload = { event: event['event'], data: args }.to_json
-  subscriber.redis.rpush "#{subscriber.queue}:event_log", payload
+def log_event subscriber, payload
+  event_info = { channel: subscriber.channel, payload: payload }.to_json
+  subscriber.redis.rpush "#{subscriber.queue}:event_log", event_info
 end
 
-Chasqui.subscribe channel: 'integration', queue: 'app1' do
-  on('user.signup') { |*args| log_event self, args }
+class UserSignupSubscriber < Chasqui::Subscriber
+  channel 'user.signup'
+
+  def perform(payload)
+    log_event self, payload
+  end
 end
 
-Chasqui.subscribe channel: 'integration', queue: 'app2' do
-  on('account.*')   { |*args| log_event self, args }
-  on('user.cancel') { |*args| log_event self, args }
+class AccountSubscriber < Chasqui::Subscriber
+  channel 'account.*'
+
+  def perform(payload)
+    log_event self, payload
+  end
+end
+
+class UserCancelSubscriber < Chasqui::Subscriber
+  channel 'user.cancel'
+
+  def perform(payload)
+    log_event self, payload
+  end
 end

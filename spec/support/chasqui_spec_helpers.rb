@@ -7,6 +7,7 @@ module ChasquiSpecHelpers
 
   def reset_config
     Chasqui.instance_variable_set(:@config, nil)
+    Chasqui.instance_variable_set(:@subscriptions, nil)
     Chasqui.config.logger = './tmp/test.log'
   end
 
