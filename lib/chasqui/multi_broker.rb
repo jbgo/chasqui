@@ -17,11 +17,11 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def in_progress_queue
-    with_namespace inbox, 'in_progress'
+    with_namespace inbox_queue, 'in_progress'
   end
 
-  def inbox_queue
-    with_namespace inbox
+  def namespaced_inbox_queue
+    with_namespace inbox_queue
   end
 
   def build_job(queue, event)
@@ -57,7 +57,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def dequeue
-    redis.brpoplpush(inbox_queue, in_progress_queue, timeout: config.broker_poll_interval).tap do |event|
+    redis.brpoplpush(namespaced_inbox_queue, in_progress_queue, timeout: config.broker_poll_interval).tap do |event|
       if event.nil?
         logger.debug "reached timeout for broker poll interval: #{config.broker_poll_interval} seconds"
       end

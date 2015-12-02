@@ -27,7 +27,6 @@ module Chasqui
     def inbox_queue
       self[:inbox_queue] ||= Defaults.fetch(:inbox_queue)
     end
-    alias inbox inbox_queue
 
     def redis
       unless self[:redis]

@@ -5,90 +5,24 @@ describe Chasqui do
     expect(Chasqui::VERSION).not_to be nil
   end
 
+  describe '.config' do
+    it 'returns a config object' do
+      expect(Chasqui.config).to be_instance_of(Chasqui::Config)
+    end
+  end
+
   describe '.configure' do
-    before { reset_config }
-
-    context 'defaults' do
-      it { expect(Chasqui.channel).to eq('__default') }
-      it { expect(Chasqui.inbox_queue).to eq('inbox') }
-      it { expect(Chasqui.redis.client.db).to eq(0) }
-      it { expect(Chasqui.config.broker_poll_interval).to eq(3) }
-      it { expect(Chasqui.config.worker_backend).to eq(nil) }
-
-      it do
-        # remove chasqui's test environment logger
-        Chasqui.config[:logger] = nil
-        expect(Chasqui.logger).to be_kind_of(Logger)
-      end
-
-      it { expect(Chasqui.logger.level).to eq(Logger::INFO) }
-      it { expect(Chasqui.logger.progname).to eq('chasqui') }
-    end
-
-    it 'configures the channel' do
-      Chasqui.config.channel = 'com.example.test'
-      expect(Chasqui.channel).to eq('com.example.test')
-    end
-
-    it 'accepts a block' do
-      Chasqui.configure { |config| config.channel = 'com.example.test' }
-      expect(Chasqui.channel).to eq('com.example.test')
-    end
-
-    it 'configures the inbox queue' do
-      Chasqui.config.inbox_queue = 'foo'
-      expect(Chasqui.inbox).to eq('foo')
-    end
-
-    it 'configures the broker poll interval' do
-      Chasqui.config.broker_poll_interval = 1
-      expect(Chasqui.config.broker_poll_interval).to eq(1)
-    end
-
-    context 'redis' do
-      it 'accepts config options' do
-        redis_config = { host: '10.0.3.24' }
-        Chasqui.config.redis = redis_config
-        expect(Chasqui.redis.client.host).to eq('10.0.3.24')
-      end
-
-      it 'accepts an initialized client' do
-        redis = Redis.new db: 2
-        Chasqui.config.redis = redis
-        expect(Chasqui.redis.client.db).to eq(2)
-      end
-
-      it 'accepts URLs' do
-        Chasqui.config.redis = 'redis://10.0.1.21:12345/0'
-        expect(Chasqui.redis.client.host).to eq('10.0.1.21')
-      end
-
-      it 'uses a namespace' do
-        Chasqui.redis.set 'foo', 'bar'
-        expect(Chasqui.redis.redis.get 'chasqui:foo').to eq('bar')
+    it 'yields a config object' do
+      Chasqui.configure do |c|
+        expect(c).to be_instance_of(Chasqui::Config)
       end
     end
+  end
 
-    describe 'logger' do
-      it 'accepts a log device' do
-        logs = StringIO.new
-        Chasqui.config.logger = logs
-        Chasqui.logger.info "status"
-        Chasqui.logger.warn "error"
-
-        logs.rewind
-        output = logs.read
-
-        %w(chasqui INFO status WARN error).each do |text|
-          expect(output).to match(text)
-        end
-      end
-
-      it 'accepts a logger-like object' do
-        fake_logger = FakeLogger.new
-        Chasqui.config.logger = fake_logger
-        expect(Chasqui.logger).to eq(fake_logger)
-        expect(Chasqui.logger.progname).to eq('chasqui')
+  describe 'config delegates' do
+    Chasqui::CONFIG_SETTINGS.each do |setting|
+      it "responds to #{setting}" do
+        expect(Chasqui).to respond_to(setting)
       end
     end
   end

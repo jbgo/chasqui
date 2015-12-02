@@ -17,11 +17,10 @@ require "chasqui/workers/sidekiq_worker"
 module Chasqui
   class << self
     extend Forwardable
-    def_delegators :config, :redis, :channel, :inbox, :inbox_queue, :logger
+    def_delegators :config, *CONFIG_SETTINGS
 
     def configure(&block)
-      @config ||= Config.new
-      yield @config
+      yield config
     end
 
     def config
