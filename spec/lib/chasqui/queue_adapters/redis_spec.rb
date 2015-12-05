@@ -1,14 +1,14 @@
 require 'spec_helper'
 
+class MySubscriber < Chasqui::Subscriber
+  channel 'channel-name'
+  queue 'queue-name'
+end
+
 describe Chasqui::QueueAdapters::Redis do
   it_behaves_like 'a queue adapter'
 
-  let(:subscriber) do
-    Class.new(Chasqui::Subscriber) do
-      channel 'channel-name'
-      queue 'queue-name'
-    end.new
-  end
+  let(:subscriber) { MySubscriber.new }
 
   describe '#bind / #unbind' do
     let(:key) { 'subscriptions:channel-name' }
@@ -17,12 +17,13 @@ describe Chasqui::QueueAdapters::Redis do
       before do
         reset_chasqui
         Chasqui.config.worker_backend = :resque
+        Resque.redis.namespace = :resque
       end
 
       it 'persists the subscriptions to redis' do
         subject.bind(subscriber)
         subscriptions = redis.smembers(key)
-        expect(subscriptions).to eq(['resque/resque:queue-name'])
+        expect(subscriptions).to eq(['resque/MySubscriber/resque:queue:queue-name'])
 
         redis.sadd key, 'random'
 
@@ -37,12 +38,13 @@ describe Chasqui::QueueAdapters::Redis do
         before do
           reset_chasqui
           Chasqui.config.worker_backend = :sidekiq
+          Sidekiq.configure_client { |c| c.redis = { namespace: nil } }
         end
 
         it 'persists the subscription to redis' do
           subject.bind(subscriber)
           subscriptions = redis.smembers('subscriptions:channel-name')
-          expect(subscriptions).to eq(['sidekiq/queue-name'])
+          expect(subscriptions).to eq(['sidekiq/MySubscriber/queue:queue-name'])
 
           redis.sadd key, 'random'
 

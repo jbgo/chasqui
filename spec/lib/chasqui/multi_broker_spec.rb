@@ -1,5 +1,20 @@
 require 'spec_helper'
 
+class Worker1 < Chasqui::Subscriber
+  channel 'app1'
+  queue 'queue1'
+end
+
+class Worker2 < Chasqui::Subscriber
+  channel 'app2'
+  queue 'queue2'
+end
+
+class Worker3 < Chasqui::Subscriber
+  channel 'app1'
+  queue 'queue3'
+end
+
 describe Chasqui::MultiBroker do
   let(:broker) { Chasqui::MultiBroker.new }
 
@@ -12,14 +27,13 @@ describe Chasqui::MultiBroker do
 
   describe '#forward_event' do
     before do
-      Chasqui.config.channel = 'app1'
-      Chasqui.subscribe channel: 'app1', queue: 'queue1'
-      Chasqui.subscribe channel: 'app2', queue: 'queue2'
-      Chasqui.subscribe channel: 'app1', queue: 'queue3'
+      Chasqui.register Worker1.new
+      Chasqui.register Worker2.new
+      Chasqui.register Worker3.new
     end
 
     it 'places the event on all subscriber queues' do
-      Chasqui.publish 'foo.bar', 'A'
+      Chasqui.publish 'app1', foo: 'bar'
       broker.forward_event
 
       expect(nnredis.llen(broker.inbox_queue)).to eq(0)
@@ -29,9 +43,8 @@ describe Chasqui::MultiBroker do
       expect(nnredis.llen('queue:queue3')).to eq(1)
 
       event = {
-        'event' => 'foo.bar',
         'channel' => 'app1',
-        'data' => ['A'],
+        'data' => [{ 'foo' => 'bar' }],
         'created_at' => Time.now.to_f.to_s,
         'retry' => true
       }
@@ -49,16 +62,15 @@ describe Chasqui::MultiBroker do
       begin
         Timeout::timeout(1) do
           Chasqui.config.redis = Redis.new
-          Chasqui.config.channel = 'app2'
-          Chasqui.publish 'foo.bar', 'A'
+          Chasqui.register Worker2.new
+          Chasqui.publish 'app2', foo: 'bar'
 
           job = JSON.parse nnredis.blpop('queue:queue2')[1]
-          expect(job).to include('class' => 'Chasqui::Subscriber__queue2')
+          expect(job).to include('class' => 'Worker2')
 
           event = {
-            'event' => 'foo.bar',
             'channel' => 'app2',
-            'data' => ['A'],
+            'data' => [{ 'foo' => 'bar' }],
             'created_at' => Time.now.to_f.to_s,
             'retry' => true
           }
@@ -71,9 +83,9 @@ describe Chasqui::MultiBroker do
     end
 
     it "doesn't lose events if the broker fails" do
-      Chasqui.config.channel = 'app2'
-      Chasqui.publish 'foo', 'process'
-      Chasqui.publish 'foo', 'keep in queue'
+      Chasqui.register Worker2.new
+      Chasqui.publish 'app2', 'process'
+      Chasqui.publish 'app2', 'keep in queue'
       allow(broker.redis).to receive(:smembers).and_raise(Redis::ConnectionError)
 
       expect(-> { broker.forward_event }).to raise_error(Redis::ConnectionError)
@@ -86,7 +98,6 @@ describe Chasqui::MultiBroker do
 
       job = JSON.parse nnredis.lpop('queue:queue2')
       expect(job['args']).to include(
-        'event' => 'foo',
         'channel' => 'app2',
         'data' => ['process'],
         'created_at' => Time.now.to_f.to_s,
@@ -103,10 +114,10 @@ describe Chasqui::MultiBroker do
 
   describe '#build_job' do
     it 'includes useful metadata' do
-      event = { 'event' => 'foo', 'channel' => 'bar', 'data' => [] }
-      job = JSON.parse broker.build_job('my-queue', event)
+      event = { 'channel' => 'fox4', 'data' => [] }
+      job = JSON.parse broker.build_job('my-queue', 'MyWorker', event)
 
-      expect(job['class']).to eq('Chasqui::Subscriber__my_queue')
+      expect(job['class']).to eq('MyWorker')
       expect(job['args']).to include(event)
       expect(job['queue']).to eq('my-queue')
       expect(job['jid']).to match(/^[0-9a-f]{24}/i)
@@ -117,18 +128,18 @@ describe Chasqui::MultiBroker do
 
     it 'uses the event created_at time' do
       created_at = (Time.now - 3).to_f
-      job = JSON.parse broker.build_job('my-queue', 'created_at' => created_at.to_s)
+      job = JSON.parse broker.build_job('my-queue', 'MyWorker', 'created_at' => created_at.to_s)
       expect(job['created_at']).to eq(created_at)
     end
 
     it 'uses the event retry value' do
-      job = JSON.parse broker.build_job('my-queue', 'retry' => true)
+      job = JSON.parse broker.build_job('my-queue', 'MyWorker', 'retry' => true)
       expect(job['retry']).to be true
 
-      job = JSON.parse broker.build_job('my-queue', 'retry' => false)
+      job = JSON.parse broker.build_job('my-queue', 'MyWorker', 'retry' => false)
       expect(job['retry']).to be false
 
-      job = JSON.parse broker.build_job('my-queue', 'retry' => nil)
+      job = JSON.parse broker.build_job('my-queue', 'MyWorker', 'retry' => nil)
       expect(job['retry']).to be nil
     end
   end

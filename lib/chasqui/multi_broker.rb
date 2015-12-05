@@ -24,9 +24,9 @@ class Chasqui::MultiBroker < Chasqui::Broker
     with_namespace inbox_queue
   end
 
-  def build_job(queue, event)
+  def build_job(queue, job_class, event)
     {
-      class: "Chasqui::#{Chasqui.subscriber_class_name(queue)}",
+      class: job_class,
       args: [event],
       queue: 'my-queue',
       jid: SecureRandom.hex(12),
@@ -65,8 +65,8 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def dispatch(event, subscription_id)
-    backend, queue = subscription_id.split('/', 2)
-    job = build_job queue, event
+    backend, job_class, queue = subscription_id.split('/', 3)
+    job = build_job queue, job_class, event
 
     logger.debug "dispatching event queue=#{queue} backend=#{backend} job=#{job}"
 
@@ -79,7 +79,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def subscriptions_for(event)
-    subscription_key = Chasqui.subscription_key event['channel']
+    subscription_key = "subscriptions:#{event['channel']}"
     redis.smembers with_namespace(subscription_key)
   end
 
