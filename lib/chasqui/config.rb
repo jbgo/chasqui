@@ -4,7 +4,8 @@ module Chasqui
     default_queue: 'chasqui-subscribers',
     inbox_queue: 'inbox',
     redis_namespace: 'chasqui',
-    broker_poll_interval: 3
+    broker_poll_interval: 3,
+    queue_adapter: -> { QueueAdapters::Redis }
   }.freeze
 
   class ConfigurationError < StandardError
@@ -16,6 +17,7 @@ module Chasqui
     :default_queue,
     :inbox_queue,
     :logger,
+    :queue_adapter,
     :redis,
     :worker_backend
   ]
@@ -27,6 +29,10 @@ module Chasqui
 
     def inbox_queue
       self[:inbox_queue] ||= Defaults.fetch(:inbox_queue)
+    end
+
+    def queue_adapter
+      self[:queue_adapter] ||= Defaults.fetch(:queue_adapter).call
     end
 
     def redis

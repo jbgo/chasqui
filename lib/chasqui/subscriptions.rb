@@ -1,5 +1,6 @@
 module Chasqui
   class Subscriptions
+    attr_reader :queue_adapter
 
     def initialize(queue_adapter)
       @subscriptions = {}
@@ -44,9 +45,5 @@ module Chasqui
     def subscribed?(subscriber)
       @subscribers.key? subscriber.object_id
     end
-
-    private
-
-    attr_reader :queue_adapter
   end
 end

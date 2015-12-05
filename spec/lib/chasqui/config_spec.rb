@@ -9,6 +9,7 @@ describe Chasqui::Config do
     it { expect(subject.redis.client.db).to eq(0) }
     it { expect(subject.broker_poll_interval).to eq(3) }
     it { expect(subject.worker_backend).to eq(nil) }
+    it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapters::Redis) }
 
     it do
       # remove chasqui's test environment logger
@@ -38,6 +39,11 @@ describe Chasqui::Config do
   it 'configures the broker poll interval' do
     subject.broker_poll_interval = 1
     expect(subject.broker_poll_interval).to eq(1)
+  end
+
+  it 'configures the queue adapter' do
+    subject.queue_adapter = FakeQueueAdapter
+    expect(subject.queue_adapter).to eq(FakeQueueAdapter)
   end
 
   context 'redis' do

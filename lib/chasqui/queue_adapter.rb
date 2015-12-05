@@ -8,4 +8,7 @@ module Chasqui
       raise NotImplementedError
     end
   end
+
+  module QueueAdapters
+  end
 end

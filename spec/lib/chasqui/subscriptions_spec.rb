@@ -1,17 +1,7 @@
 require 'spec_helper'
 
-module Chasqui
-  class FakeQueueAdapter
-    include QueueAdapter
-  end
-end
-
-describe Chasqui::FakeQueueAdapter do
-  it_behaves_like 'a queue adapter'
-end
-
 describe Chasqui::Subscriptions do
-  let(:queue_adapter) { Chasqui::FakeQueueAdapter.new }
+  let(:queue_adapter) { FakeQueueAdapter.new }
 
   subject { Chasqui::Subscriptions.new queue_adapter }
 

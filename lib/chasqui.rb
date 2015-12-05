@@ -9,6 +9,7 @@ require "chasqui/config"
 require "chasqui/broker"
 require "chasqui/multi_broker"
 require "chasqui/queue_adapter"
+require "chasqui/queue_adapters/redis"
 require "chasqui/subscriber"
 require "chasqui/subscribers/inline_subscriber"
 require "chasqui/subscriptions"
@@ -38,41 +39,12 @@ module Chasqui
       redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
-    def subscribe(channel, queue=Chasqui.default_queue, &block)
-      subscriber = InlineSubscriber.create channel, queue, &block
-      register subscriber
-    end
-
-      # create_subscription(queue, channel).tap do |subscription|
-      #   subscription.subscriber.evaluate(&block) if block_given?
-      #   redis.sadd subscription_key(channel), subscription.subscription_id
-      # end
-    # end
-
-    def unsubscribe(channel, options={}, &block)
-      queue = options.fetch :queue
-
-      subscriptions.
-        find(channel, queue).
-        select { |s| s.kind_of?(InlineSubscriber) }.
-        each { |s| subscriptions.unregister s }
-
-      # if subscription
-      #   redis.srem subscription_key(channel), subscription.subscription_id
-      #   subscription.subscription_id
-      # end
-    end
-
-    # def subscription(queue)
-    #   subscriptions[queue.to_s]
-    # end
-
     # def subscription_key(channel)
     #   "subscriptions:#{channel}"
     # end
 
     def subscriptions
-      @subscriptions ||= Subscriptions.new
+      @subscriptions ||= Subscriptions.new build_queue_adapter
     end
 
     private
@@ -94,6 +66,9 @@ module Chasqui
 
     def fetch_option(opts, key, default=nil)
       opts.fetch key.to_sym, opts.fetch(key.to_s, default)
+    end
+
+    def build_queue_adapter
     end
   end
 end

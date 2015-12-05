@@ -28,9 +28,10 @@ describe Chasqui do
   end
 
   describe '.subscriptions' do
-    it do
-      expect(Chasqui.subscriptions).to be_instance_of(Chasqui::Subscriptions)
-    end
+    subject { Chasqui.subscriptions }
+
+    it { should be_instance_of(Chasqui::Subscriptions) }
+    it { expect(subject.queue_adapter).to be_instance_of(Chasqui::QueueAdapters::Redis) }
   end
 
   describe 'subscription management delegates' do
@@ -40,28 +41,6 @@ describe Chasqui do
         Chasqui.send m
       end
     end
-  end
-
-  describe '.subscribe' do
-    before do
-      reset_config
-      Chasqui.config.channel_prefix = 'prefix'
-    end
-
-    it 'registers an inline subscriber' do
-      expect(Chasqui).to receive(:register) do |subscriber|
-        expect(subscriber).to be_kind_of(Chasqui::InlineSubscriber)
-        expect(subscriber.perform foo: 'bar').to eq('bar')
-      end
-
-      subscriber = Chasqui.subscribe 'a.channel' do |payload|
-        payload[:foo]
-      end
-    end
-  end
-
-  pending '.unsubscribe' do
-    it 'only unsubscribes inline subscribers'
   end
 
   describe '.publish' do
