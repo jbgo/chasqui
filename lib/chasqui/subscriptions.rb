@@ -1,17 +1,10 @@
 module Chasqui
   class Subscriptions
 
-    def initialize
+    def initialize(queue_adapter)
       @subscriptions = {}
       @subscribers ||= {}
-    end
-
-    def bind(subscriber)
-      raise NotImplementedError
-    end
-
-    def unbind(subscriber)
-      raise NotImplementedError
+      @queue_adapter = queue_adapter
     end
 
     def register(subscriber)
@@ -23,11 +16,15 @@ module Chasqui
       @subscriptions[q][c][subscriber.object_id] = subscriber
 
       @subscribers[subscriber.object_id] = subscriber
+
+      queue_adapter.bind subscriber
     end
 
     def unregister(subscriber)
       q = subscriber.queue.to_s
       c = subscriber.channel.to_s
+
+      queue_adapter.unbind subscriber
 
       if @subscriptions[q] && @subscriptions[q][c]
         @subscriptions[q][c].delete subscriber.object_id
@@ -48,5 +45,8 @@ module Chasqui
       @subscribers.key? subscriber.object_id
     end
 
+    private
+
+    attr_reader :queue_adapter
   end
 end

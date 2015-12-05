@@ -1,6 +1,20 @@
 require 'spec_helper'
 
+module Chasqui
+  class FakeQueueAdapter
+    include QueueAdapter
+  end
+end
+
+describe Chasqui::FakeQueueAdapter do
+  it_behaves_like 'a queue adapter'
+end
+
 describe Chasqui::Subscriptions do
+  let(:queue_adapter) { Chasqui::FakeQueueAdapter.new }
+
+  subject { Chasqui::Subscriptions.new queue_adapter }
+
   let(:a) { OpenStruct.new channel: 'ch1', queue: 'foo' }
   let(:b) { OpenStruct.new channel: 'ch1', queue: 'bar' }
   let(:c) { OpenStruct.new channel: 'ch2', queue: 'foo' }
@@ -8,6 +22,7 @@ describe Chasqui::Subscriptions do
 
   before do
     [a, b, c, d].each do |subscriber|
+      expect(queue_adapter).to receive(:bind).with(subscriber)
       subject.register subscriber
     end
   end
@@ -30,12 +45,11 @@ describe Chasqui::Subscriptions do
     group3 = subject.find 'ch2', 'foo'
     expect(group3.size).to eq(1)
     expect(subject.find 'ch2', 'foo').to include(c)
-
-    queues = Chasqui.redis.smembers 'foo'
   end
 
   it 'unregisters subscribers' do
     [a, b, c].each do |subscriber|
+      expect(queue_adapter).to receive(:unbind).with(subscriber)
       subject.unregister subscriber
       expect(subject.subscribed? subscriber).to be false
     end
@@ -48,22 +62,6 @@ describe Chasqui::Subscriptions do
     remaining = subject.find 'ch1', 'foo'
     expect(remaining.size).to eq(1)
     expect(remaining).to include(d)
-  end
-
-  describe '#bind' do
-    it 'binds the subscriber to a queue' do
-      expect(-> {
-        subject.bind 'subsriber'
-      }).to raise_error(NotImplementedError)
-    end
-  end
-
-  describe '#unbind' do
-    it 'unbinds the subscriber from a queue' do
-      expect(-> {
-        subject.unbind 'subscriber'
-      }).to raise_error(NotImplementedError)
-    end
   end
 
 end
