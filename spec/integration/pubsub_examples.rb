@@ -4,28 +4,28 @@ shared_examples 'pubsub' do |namespace, start_workers_method|
 
   def events_to_publish
     [
-      { channel: 'user.signup',    data: ['Kelly'] },
-      { channel: 'account.credit', data: [1337, 'Kelly'] },
-      { channel: 'account.debit',  data: [10, 'Kelly'] },
-      { channel: 'user.signup',    data: ['Travis'] },
-      { channel: 'account.debit',  data: [9000, 'Kelly'] },
-      { channel: 'user.cancel',    data: ['Kelly'] },
-      { channel: 'account.credit', data: [42, 'Travis'] },
+      { channel: 'user.signup',    payload: ['Kelly'] },
+      { channel: 'account.credit', payload: [1337, 'Kelly'] },
+      { channel: 'account.debit',  payload: [10, 'Kelly'] },
+      { channel: 'user.signup',    payload: ['Travis'] },
+      { channel: 'account.debit',  payload: [9000, 'Kelly'] },
+      { channel: 'user.cancel',    payload: ['Kelly'] },
+      { channel: 'account.credit', payload: [42, 'Travis'] },
     ]
   end
 
   def expected_events
     {
       'app1' => [
-        { channel: 'user.signup', data: ['Kelly'] },
-        { channel: 'user.signup', data: ['Travis'] },
+        { channel: 'user.signup', payload: ['Kelly'] },
+        { channel: 'user.signup', payload: ['Travis'] },
       ],
       'app2' => [
-        { channel: 'account.credit', data: [1337, 'Kelly'] },
-        { channel: 'account.debit',  data: [10, 'Kelly'] },
-        { channel: 'account.debit',  data: [9000, 'Kelly'] },
-        { channel: 'user.cancel',    data: ['Kelly'] },
-        { channel: 'account.credit', data: [42, 'Travis'] },
+        { channel: 'account.credit', payload: [1337, 'Kelly'] },
+        { channel: 'account.debit',  payload: [10, 'Kelly'] },
+        { channel: 'account.debit',  payload: [9000, 'Kelly'] },
+        { channel: 'user.cancel',    payload: ['Kelly'] },
+        { channel: 'account.credit', payload: [42, 'Travis'] },
       ],
     }
   end
@@ -56,7 +56,7 @@ shared_examples 'pubsub' do |namespace, start_workers_method|
 
   it 'works' do
     events_to_publish.each do |event|
-      Chasqui.publish event[:channel], *event[:data]
+      Chasqui.publish event[:channel], *event[:payload]
     end
 
     begin
@@ -66,7 +66,7 @@ shared_examples 'pubsub' do |namespace, start_workers_method|
             _, payload = @redis.blpop "#{namespace}:#{subscriber_queue}:event_log"
             actual = JSON.parse payload
             expect(actual['channel']).to eq(expected[:channel])
-            expect(actual['data']).to eq(expected[:data])
+            expect(actual['payload']).to eq(expected[:payload])
           end
         end
       end

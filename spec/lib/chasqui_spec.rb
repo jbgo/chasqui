@@ -56,10 +56,10 @@ describe Chasqui do
         Chasqui.publish 'test.event', *args
       end
 
-      payloads.each do |data|
+      payloads.each do |payload|
         event = JSON.load Chasqui.redis.rpop('inbox')
         expect(event['channel']).to eq('test.event')
-        expect(event['data']).to eq(data)
+        expect(event['payload']).to eq(payload)
         expect(event['created_at'].to_f).to be_within(0.01).of(Time.now.to_f)
         expect(event['retry']).to eq(true)
       end

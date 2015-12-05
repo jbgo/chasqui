@@ -22,7 +22,7 @@ if sidekiq_supported_ruby_version?
       let(:worker_class) { Chasqui::SidekiqWorker.create(subscriber) }
 
       it 'delegates to the subscriber' do
-        event = { 'event' => 'foo', 'data' => ['bar'] }
+        event = { 'event' => 'foo', 'payload' => ['bar'] }
         worker = worker_class.new
         worker.perform event
         received_event = subscriber.events.shift

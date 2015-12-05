@@ -17,7 +17,7 @@ describe Chasqui::ResqueWorker do
     let(:worker) { Chasqui::ResqueWorker.create(subscriber) }
 
     it 'delegates to the subscriber' do
-      event = { 'event' => 'foo', 'data' => ['bar'] }
+      event = { 'event' => 'foo', 'payload' => ['bar'] }
       worker.perform event
       received_event = subscriber.events.shift
       expect(received_event).to eq(event)

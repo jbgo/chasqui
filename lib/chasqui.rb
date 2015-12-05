@@ -47,7 +47,7 @@ module Chasqui
     def build_event(channel, *args)
       opts = extract_job_options!(*args)
 
-      payload = { channel: channel, data: args }
+      payload = { channel: channel, payload: args }
       payload[:retry] = fetch_option(opts, :retry, true) || false
       payload[:created_at] = Time.now.to_f.to_s
 

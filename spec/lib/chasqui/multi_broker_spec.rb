@@ -44,7 +44,7 @@ describe Chasqui::MultiBroker do
 
       event = {
         'channel' => 'app1',
-        'data' => [{ 'foo' => 'bar' }],
+        'payload' => [{ 'foo' => 'bar' }],
         'created_at' => Time.now.to_f.to_s,
         'retry' => true
       }
@@ -70,7 +70,7 @@ describe Chasqui::MultiBroker do
 
           event = {
             'channel' => 'app2',
-            'data' => [{ 'foo' => 'bar' }],
+            'payload' => [{ 'foo' => 'bar' }],
             'created_at' => Time.now.to_f.to_s,
             'retry' => true
           }
@@ -99,7 +99,7 @@ describe Chasqui::MultiBroker do
       job = JSON.parse nnredis.lpop('queue:queue2')
       expect(job['args']).to include(
         'channel' => 'app2',
-        'data' => ['process'],
+        'payload' => ['process'],
         'created_at' => Time.now.to_f.to_s,
         'retry' => true
       )
@@ -114,7 +114,7 @@ describe Chasqui::MultiBroker do
 
   describe '#build_job' do
     it 'includes useful metadata' do
-      event = { 'channel' => 'fox4', 'data' => [] }
+      event = { 'channel' => 'fox4', 'payload' => [] }
       job = JSON.parse broker.build_job('my-queue', 'MyWorker', event)
 
       expect(job['class']).to eq('MyWorker')
