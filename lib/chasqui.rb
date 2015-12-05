@@ -39,10 +39,6 @@ module Chasqui
       redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
-    # def subscription_key(channel)
-    #   "subscriptions:#{channel}"
-    # end
-
     def subscriptions
       @subscriptions ||= Subscriptions.new build_queue_adapter
     end
@@ -69,6 +65,7 @@ module Chasqui
     end
 
     def build_queue_adapter
+      queue_adapter.new
     end
   end
 end
