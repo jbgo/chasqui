@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-shared_examples 'pubsub' do |namespace, start_workers_method|
+shared_examples 'pubsub' do |start_workers_method|
 
   def events_to_publish
     [
@@ -63,7 +63,7 @@ shared_examples 'pubsub' do |namespace, start_workers_method|
       Timeout::timeout(10) do
         expected_events.each do |subscriber_queue, events|
           events.each do |expected|
-            _, payload = @redis.blpop "#{namespace}:#{subscriber_queue}:event_log"
+            _, payload = Chasqui.redis.blpop "#{subscriber_queue}:event_log"
             actual = JSON.parse payload
             expect(actual['channel']).to eq(expected[:channel])
             expect(actual['payload']).to eq(expected[:payload])
