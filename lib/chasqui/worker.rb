@@ -20,7 +20,7 @@ module Chasqui
 
       def check_for_worker_backend
         unless BACKENDS.keys.include? Chasqui.worker_backend
-          msg = "Chasqui.config.worker_backend must be one of #{BACKENDS}"
+          msg = "Chasqui.config.worker_backend must be one of #{BACKENDS.keys}"
           raise ConfigurationError.new msg
         end
       end
