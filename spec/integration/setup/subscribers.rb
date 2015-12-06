@@ -12,7 +12,7 @@ class UserSignupSubscriber < Chasqui::Subscriber
 end
 
 class AccountSubscriber < Chasqui::Subscriber
-  channel 'account.*'
+  channel 'account.credit', 'account.debit'
 
   def perform(payload)
     log_event self, payload

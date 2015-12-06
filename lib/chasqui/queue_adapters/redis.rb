@@ -5,21 +5,21 @@ module Chasqui
       def_delegators :Chasqui, :redis
 
       def bind(subscriber)
-        redis.sadd key(subscriber), queue_description(subscriber)
+        subscriber.channels.each do |channel|
+          redis.sadd key(channel), queue_description(subscriber)
+        end
       end
 
       def unbind(subscriber)
-        redis.srem key(subscriber), queue_description(subscriber)
+        subscriber.channels.each do |channel|
+          redis.srem key(channel), queue_description(subscriber)
+        end
       end
 
       private
 
-      def key(subscriber)
-        "subscriptions:#{subscriber.channel}"
-      end
-
-      def subscriptions_key(subscriber)
-        "subscribers:#{subscriber.channel}"
+      def key(channel)
+        "subscriptions:#{channel}"
       end
 
       def queue_description(subscriber)

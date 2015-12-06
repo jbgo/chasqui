@@ -11,7 +11,7 @@ describe Chasqui::InlineSubscriber do
       inline = Chasqui::InlineSubscriber.create 'channel', 'queue', &block
 
       expect(inline).to be_kind_of(Chasqui::Subscriber)
-      expect(inline.channel).to eq('prefix.channel')
+      expect(inline.channels).to include('prefix.channel')
       expect(inline.queue).to eq('queue')
       expect(inline.perform(a: 2, b: 2)).to eq(4)
     end

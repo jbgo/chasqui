@@ -1,7 +1,7 @@
 module Chasqui
   class Subscriber
     extend Forwardable
-    def_delegators 'self.class.subscriber_config', :channel, :queue
+    def_delegators 'self.class.subscriber_config', :channels, :queue
 
     def initialize(options={})
       @logger = options[:logger]
@@ -21,7 +21,7 @@ module Chasqui
     end
 
     class << self
-      SubscriberConfig = Struct.new :channel, :queue
+      SubscriberConfig = Struct.new :channels, :queue
 
       def subscriber_config
         @subscriber_config ||= SubscriberConfig.new(
@@ -30,9 +30,13 @@ module Chasqui
         )
       end
 
-      def channel(name, options={})
+      def channel(*names)
+        options = names.last.kind_of?(Hash) ? names.pop : {}
         prefix = options.fetch :prefix, Chasqui.channel_prefix
-        subscriber_config.channel = prefix ? "#{prefix}.#{name}" : name
+
+        subscriber_config.channels = names.map do |name|
+          prefix ? "#{prefix}.#{name}" : name
+        end
       end
 
       def queue(name)

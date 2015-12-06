@@ -24,4 +24,16 @@ module ChasquiSpecHelpers
     nnredis.keys('*').each { |k| nnredis.del k }
   end
 
+  def new_subscriber(class_name, options={})
+    queue = options.fetch :queue
+    channel = options.fetch :channel
+
+    @subscriber_registry ||= {}
+    @subscriber_registry[class_name] ||= Class.new(Chasqui::Subscriber)
+    
+    sub = @subscriber_registry[class_name]
+    sub.channel channel
+    sub.queue queue
+    sub.new
+  end
 end

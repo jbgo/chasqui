@@ -37,7 +37,7 @@ shared_examples 'pubsub' do |namespace, start_workers_method|
     @redis.keys('*').each { |k| @redis.del k }
 
     Chasqui.configure do |c|
-      c.channel = 'integration'
+      c.channel_prefix = 'integration'
       c.redis = @redis_url
     end
 

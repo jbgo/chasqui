@@ -5,12 +5,14 @@ describe Chasqui::Subscriptions do
 
   subject { Chasqui::Subscriptions.new queue_adapter }
 
-  let(:a) { OpenStruct.new channel: 'ch1', queue: 'foo' }
-  let(:b) { OpenStruct.new channel: 'ch1', queue: 'bar' }
-  let(:c) { OpenStruct.new channel: 'ch2', queue: 'foo' }
-  let(:d) { OpenStruct.new channel: 'ch1', queue: 'foo' }
+  let(:a) { new_subscriber 'SubscriberA', channel: 'ch1', queue: 'foo' }
+  let(:b) { new_subscriber 'SubscriberB', channel: 'ch1', queue: 'bar' }
+  let(:c) { new_subscriber 'SubscriberC', channel: 'ch2', queue: 'foo' }
+  let(:d) { new_subscriber 'SubscriberD', channel: 'ch1', queue: 'foo' }
 
   before do
+    reset_config
+
     [a, b, c, d].each do |subscriber|
       expect(queue_adapter).to receive(:bind).with(subscriber)
       subject.register subscriber
