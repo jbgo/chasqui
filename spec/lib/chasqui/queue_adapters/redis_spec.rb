@@ -47,6 +47,7 @@ describe Chasqui::QueueAdapters::Redis do
           subscriptions = redis.smembers('subscriptions:channel-name')
           expect(subscriptions).to eq(
             ['sidekiq/Chasqui::Workers::MySubscriber/queue:queue-name'])
+          expect(redis_no_namespace.smembers 'queues').to eq(['queue-name'])
 
           redis.sadd key, 'random'
 
