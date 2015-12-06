@@ -5,7 +5,7 @@ class MySubscriber < Chasqui::Subscriber
   queue 'queue-name'
 end
 
-describe Chasqui::QueueAdapters::Redis do
+describe Chasqui::QueueAdapters::RedisQueueAdapter do
   it_behaves_like 'a queue adapter'
 
   let(:subscriber) { MySubscriber }

@@ -9,7 +9,7 @@ describe Chasqui::Config do
     it { expect(subject.redis.client.db).to eq(0) }
     it { expect(subject.broker_poll_interval).to eq(3) }
     it { expect(subject.worker_backend).to eq(nil) }
-    it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapters::Redis) }
+    it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapters::RedisQueueAdapter) }
 
     it do
       # remove chasqui's test environment logger

@@ -5,7 +5,7 @@ module Chasqui
     inbox_queue: 'inbox',
     redis_namespace: 'chasqui',
     broker_poll_interval: 3,
-    queue_adapter: -> { QueueAdapters::Redis }
+    queue_adapter: -> { QueueAdapters::RedisQueueAdapter }
   }.freeze
 
   class ConfigurationError < StandardError

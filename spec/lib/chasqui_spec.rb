@@ -31,7 +31,7 @@ describe Chasqui do
     subject { Chasqui.subscriptions }
 
     it { should be_instance_of(Chasqui::Subscriptions) }
-    it { expect(subject.queue_adapter).to be_instance_of(Chasqui::QueueAdapters::Redis) }
+    it { expect(subject.queue_adapter).to be_instance_of(Chasqui::QueueAdapters::RedisQueueAdapter) }
   end
 
   describe 'subscription management delegates' do
