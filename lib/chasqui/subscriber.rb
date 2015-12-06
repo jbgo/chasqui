@@ -21,6 +21,8 @@ module Chasqui
     end
 
     class << self
+      attr_reader :subscribers
+
       SubscriberConfig = Struct.new :channels, :queue
 
       def subscriber_config
@@ -41,6 +43,11 @@ module Chasqui
 
       def queue(name)
         subscriber_config.queue = name
+      end
+
+      def inherited(subclass)
+        @subscribers ||= Set.new
+        @subscribers << subclass
       end
     end
   end

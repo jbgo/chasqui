@@ -86,4 +86,11 @@ describe Chasqui::Subscriber do
       }).to raise_error(NotImplementedError)
     end
   end
+
+  describe '.inherited' do
+    it 'maintains a registry of inherited classes' do
+      klass = Class.new(Chasqui::Subscriber)
+      expect(Chasqui::Subscriber.subscribers).to include(klass)
+    end
+  end
 end
