@@ -27,9 +27,9 @@ describe Chasqui::RedisBroker do
 
   describe '#forward_event' do
     before do
-      Chasqui.register Worker1.new
-      Chasqui.register Worker2.new
-      Chasqui.register Worker3.new
+      Chasqui.register Worker1
+      Chasqui.register Worker2
+      Chasqui.register Worker3
     end
 
     it 'places the event on all subscriber queues' do
@@ -62,11 +62,11 @@ describe Chasqui::RedisBroker do
       begin
         Timeout::timeout(1) do
           Chasqui.config.redis = Redis.new
-          Chasqui.register Worker2.new
+          Chasqui.register Worker2
           Chasqui.publish 'app2', foo: 'bar'
 
           job = JSON.parse nnredis.blpop('queue:queue2')[1]
-          expect(job).to include('class' => 'Worker2')
+          expect(job).to include('class' => 'Chasqui::Workers::Worker2')
 
           event = {
             'channel' => 'app2',
@@ -83,7 +83,7 @@ describe Chasqui::RedisBroker do
     end
 
     it "doesn't lose events if the broker fails" do
-      Chasqui.register Worker2.new
+      Chasqui.register Worker2
       Chasqui.publish 'app2', 'process'
       Chasqui.publish 'app2', 'keep in queue'
       allow(broker.redis).to receive(:smembers).and_raise(Redis::ConnectionError)

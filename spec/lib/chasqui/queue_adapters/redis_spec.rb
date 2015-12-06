@@ -8,7 +8,7 @@ end
 describe Chasqui::QueueAdapters::Redis do
   it_behaves_like 'a queue adapter'
 
-  let(:subscriber) { MySubscriber.new }
+  let(:subscriber) { MySubscriber }
 
   describe '#bind / #unbind' do
     let(:key) { 'subscriptions:channel-name' }
@@ -23,7 +23,8 @@ describe Chasqui::QueueAdapters::Redis do
       it 'persists the subscriptions to redis' do
         subject.bind(subscriber)
         subscriptions = redis.smembers(key)
-        expect(subscriptions).to eq(['resque/MySubscriber/resque:queue:queue-name'])
+        expect(subscriptions).to eq(
+          ['resque/Chasqui::Workers::MySubscriber/resque:queue:queue-name'])
 
         redis.sadd key, 'random'
 
@@ -44,7 +45,8 @@ describe Chasqui::QueueAdapters::Redis do
         it 'persists the subscription to redis' do
           subject.bind(subscriber)
           subscriptions = redis.smembers('subscriptions:channel-name')
-          expect(subscriptions).to eq(['sidekiq/MySubscriber/queue:queue-name'])
+          expect(subscriptions).to eq(
+            ['sidekiq/Chasqui::Workers::MySubscriber/queue:queue-name'])
 
           redis.sadd key, 'random'
 

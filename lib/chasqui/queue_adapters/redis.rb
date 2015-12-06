@@ -24,7 +24,7 @@ module Chasqui
 
       def queue_description(subscriber)
         queue_name = [worker_namespace, 'queue', subscriber.queue].compact.join(':')
-        "#{worker_backend}/#{subscriber.class}/#{queue_name}"
+        "#{worker_backend}/Chasqui::Workers::#{subscriber.name}/#{queue_name}"
       end
 
       def worker_redis

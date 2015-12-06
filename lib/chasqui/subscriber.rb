@@ -1,9 +1,10 @@
 module Chasqui
   class Subscriber
-    extend Forwardable
-    def_delegators 'self.class.subscriber_config', :channels, :queue
+    attr_reader :event
 
     def initialize(options={})
+      @event = options.fetch(:event)
+
       @logger = options[:logger]
       @redis = options[:redis]
     end
@@ -41,8 +42,16 @@ module Chasqui
         end
       end
 
-      def queue(name)
-        subscriber_config.queue = name
+      def channels
+        subscriber_config.channels
+      end
+
+      def queue(*args)
+        if args.any?
+          subscriber_config.queue = args.first
+        else
+          subscriber_config.queue
+        end
       end
 
       def inherited(subclass)

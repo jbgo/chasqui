@@ -11,11 +11,8 @@ require "chasqui/brokers/redis_broker"
 require "chasqui/queue_adapter"
 require "chasqui/queue_adapters/redis"
 require "chasqui/subscriber"
-require "chasqui/subscribers/inline_subscriber"
 require "chasqui/subscriptions"
-require "chasqui/workers/worker"
-require "chasqui/workers/resque_worker"
-require "chasqui/workers/sidekiq_worker"
+require "chasqui/worker"
 
 module Chasqui
 
