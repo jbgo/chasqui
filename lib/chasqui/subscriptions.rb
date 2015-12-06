@@ -32,6 +32,10 @@ module Chasqui
       @subscribers.key? subscriber.object_id
     end
 
+    def autoregister!
+      Subscriber.subscribers.each { |s| register s }
+    end
+
     private
 
     def register_one(channel, subscriber)

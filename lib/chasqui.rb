@@ -21,7 +21,7 @@ module Chasqui
   class << self
     extend Forwardable
     def_delegators :config, *CONFIG_SETTINGS
-    def_delegators :subscriptions, :register, :unregister
+    def_delegators :subscriptions, :register, :unregister, :autoregister!
 
     def configure(&block)
       yield config

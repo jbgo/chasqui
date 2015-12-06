@@ -29,6 +29,12 @@ module ChasquiSpecHelpers
     channel = options.fetch :channel
 
     @subscriber_registry ||= {}
+
+    if @subscriber_registry[class_name] && options[:force]
+      Object.send :remove_const, class_name
+      @subscriber_registry[class_name] = nil
+    end
+
     @subscriber_registry[class_name] ||= Class.new(Chasqui::Subscriber)
     
     @subscriber_registry[class_name].tap do |sub|
