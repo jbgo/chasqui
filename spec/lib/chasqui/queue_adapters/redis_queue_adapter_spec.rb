@@ -13,6 +13,9 @@ describe Chasqui::QueueAdapters::RedisQueueAdapter do
   describe '#bind / #unbind' do
     let(:key) { 'subscriptions:channel-name' }
 
+    before { reset_chasqui_workers }
+    after { reset_chasqui_workers }
+
     context 'resque backend' do
       before do
         reset_chasqui
@@ -25,6 +28,10 @@ describe Chasqui::QueueAdapters::RedisQueueAdapter do
         subscriptions = redis.smembers(key)
         expect(subscriptions).to eq(
           ['resque/Chasqui::Workers::MySubscriber/resque:queue:queue-name'])
+
+        expect(Chasqui::Workers.constants).to include(:MySubscriber)
+        worker = Chasqui::Workers.const_get :MySubscriber
+        expect(worker.subscriber).to eq(MySubscriber)
 
         redis.sadd key, 'random'
 
@@ -48,6 +55,10 @@ describe Chasqui::QueueAdapters::RedisQueueAdapter do
           expect(subscriptions).to eq(
             ['sidekiq/Chasqui::Workers::MySubscriber/queue:queue-name'])
           expect(redis_no_namespace.smembers 'queues').to eq(['queue-name'])
+
+          expect(Chasqui::Workers.constants).to include(:MySubscriber)
+          worker = Chasqui::Workers.const_get :MySubscriber
+          expect(worker.subscriber).to eq(MySubscriber)
 
           redis.sadd key, 'random'
 

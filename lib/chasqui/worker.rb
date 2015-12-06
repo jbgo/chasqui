@@ -38,6 +38,10 @@ module Chasqui
         @queue = subscriber.queue
         @subscriber = subscriber
 
+        class << self
+          attr_reader :subscriber
+        end
+
         def self.perform(event)
           instance = @subscriber.new event: event, logger: Resque.logger
           instance.perform event['payload']

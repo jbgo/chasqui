@@ -5,6 +5,8 @@ module Chasqui
       def_delegators :Chasqui, :redis
 
       def bind(subscriber)
+        Chasqui::Worker.create subscriber
+
         subscriber.channels.each do |channel|
           redis.sadd key(channel), queue_description(subscriber)
           worker_redis.sadd 'queues', subscriber.queue
