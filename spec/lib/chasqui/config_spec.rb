@@ -8,7 +8,6 @@ describe Chasqui::Config do
     it { expect(subject.inbox_queue).to eq('inbox') }
     it { expect(subject.redis.client.db).to eq(0) }
     it { expect(subject.broker_poll_interval).to eq(3) }
-    it { expect(subject.worker_backend).to eq(nil) }
     it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapters::RedisQueueAdapter) }
 
     it do
@@ -90,6 +89,33 @@ describe Chasqui::Config do
       subject.logger = fake_logger
       expect(subject.logger).to eq(fake_logger)
       expect(subject.logger.progname).to eq('chasqui')
+    end
+  end
+
+  context 'worker_backend' do
+    it 'chooses resque' do
+      allow(Object).to receive(:const_defined?).with(:Resque).and_return true
+      allow(Object).to receive(:const_defined?).with(:Sidekiq).and_return false
+      expect(subject.worker_backend).to eq(:resque)
+    end
+
+    it 'chooses sidekiq' do
+      allow(Object).to receive(:const_defined?).with(:Resque).and_return true
+      allow(Object).to receive(:const_defined?).with(:Sidekiq).and_return true
+      expect(subject.worker_backend).to eq(:sidekiq)
+    end
+
+    it 'refuses to guess' do
+      allow(Object).to receive(:const_defined?).with(:Resque).and_return false
+      allow(Object).to receive(:const_defined?).with(:Sidekiq).and_return false
+      expect(subject.worker_backend).to be nil
+    end
+
+    it 'allows you to choose the worker backend' do
+      allow(Object).to receive(:const_defined?).with(:Resque).and_return true
+      allow(Object).to receive(:const_defined?).with(:Sidekiq).and_return true
+      subject.worker_backend = :resque
+      expect(subject.worker_backend).to eq(:resque)
     end
   end
 end

@@ -29,6 +29,8 @@ describe Chasqui::Worker do
   context 'no worker backend' do
     describe '.create' do
       it 'raises' do
+        Chasqui.config.worker_backend = :does_not_exist
+
         expect(-> {
           Chasqui::Worker.create subscriber
         }).to raise_error(Chasqui::ConfigurationError)

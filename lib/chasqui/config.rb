@@ -35,6 +35,10 @@ module Chasqui
       self[:queue_adapter] ||= Defaults.fetch(:queue_adapter).call
     end
 
+    def worker_backend
+      self[:worker_backend] ||= choose_worker_backend
+    end
+
     def redis
       unless self[:redis]
         self.redis = Redis.new
@@ -79,6 +83,16 @@ module Chasqui
 
     def broker_poll_interval
       self[:broker_poll_interval] ||= Defaults.fetch(:broker_poll_interval)
+    end
+
+    private
+
+    def choose_worker_backend
+      if Object.const_defined? :Sidekiq
+        :sidekiq
+      elsif Object.const_defined? :Resque
+        :resque
+      end
     end
   end
 end
