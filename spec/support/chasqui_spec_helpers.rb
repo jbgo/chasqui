@@ -13,6 +13,8 @@ module ChasquiSpecHelpers
   end
 
   def reset_chasqui_workers
+    Chasqui::Worker.workers.clear
+
     Chasqui::Workers.constants.each do |c|
       Chasqui::Workers.send :remove_const, c
     end

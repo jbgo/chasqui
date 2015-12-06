@@ -11,9 +11,11 @@ module Chasqui
       }
 
       def create(subscriber)
-        check_for_worker_backend
-        new_class = worker_factory.create subscriber
-        Chasqui::Workers.const_set subscriber.name, new_class
+        workers[subscriber.object_id] ||= create_worker(subscriber)
+      end
+
+      def workers
+        @workers ||= {}
       end
 
       private
@@ -27,6 +29,12 @@ module Chasqui
 
       def worker_factory
         Chasqui.const_get BACKENDS[Chasqui.worker_backend]
+      end
+
+      def create_worker(subscriber)
+        check_for_worker_backend
+        worker = worker_factory.create subscriber
+        Chasqui::Workers.const_set subscriber.name, worker
       end
 
     end

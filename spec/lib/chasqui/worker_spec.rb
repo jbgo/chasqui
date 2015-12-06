@@ -21,6 +21,7 @@ end
 describe Chasqui::Worker do
   before do
     reset_config
+    Chasqui::Worker.workers.clear
     MockSubscriber.instance_variable_set :@info, nil
   end
 
