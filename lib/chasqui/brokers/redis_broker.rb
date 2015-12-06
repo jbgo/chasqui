@@ -1,6 +1,6 @@
 require 'securerandom'
 
-class Chasqui::MultiBroker < Chasqui::Broker
+class Chasqui::RedisBroker < Chasqui::Broker
 
   def forward_event
     event = receive or return

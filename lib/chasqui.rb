@@ -7,7 +7,7 @@ require 'redis-namespace'
 require "chasqui/version"
 require "chasqui/config"
 require "chasqui/broker"
-require "chasqui/multi_broker"
+require "chasqui/brokers/redis_broker"
 require "chasqui/queue_adapter"
 require "chasqui/queue_adapters/redis"
 require "chasqui/subscriber"

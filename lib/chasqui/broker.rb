@@ -35,7 +35,7 @@ class Chasqui::Broker
 
   class << self
     def start
-      Chasqui::MultiBroker.new.start
+      Chasqui::RedisBroker.new.start
     end
   end
 

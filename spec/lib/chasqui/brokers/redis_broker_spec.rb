@@ -15,8 +15,8 @@ class Worker3 < Chasqui::Subscriber
   queue 'queue3'
 end
 
-describe Chasqui::MultiBroker do
-  let(:broker) { Chasqui::MultiBroker.new }
+describe Chasqui::RedisBroker do
+  let(:broker) { Chasqui::RedisBroker.new }
 
   before do
     reset_chasqui
