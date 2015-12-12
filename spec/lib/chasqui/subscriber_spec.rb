@@ -38,7 +38,7 @@ describe Chasqui::Subscriber do
   end
 
   describe '.channels' do
-    before { subscriber_class.channel 'some.channel' }
+    before { subscriber_class.subscribe channel: 'some.channel' }
 
     context 'default' do
       it { expect(subscriber_class.channels).to include('some.channel') }
@@ -47,7 +47,7 @@ describe Chasqui::Subscriber do
     context 'with default prefix' do
       before do
         Chasqui.config.channel_prefix = 'prefix'
-        subscriber_class.channel 'some.channel'
+        subscriber_class.subscribe channel: 'some.channel'
       end
 
       it { expect(subscriber_class.channels).to include('prefix.some.channel') }
@@ -57,18 +57,18 @@ describe Chasqui::Subscriber do
       before { Chasqui.config.channel_prefix = 'prefix' }
 
       it 'uses the custom prefix' do
-        subscriber_class.channel 'another.channel', prefix: 'custom'
+        subscriber_class.subscribe channel: 'another.channel', prefix: 'custom'
         expect(subscriber_class.channels).to include('custom.another.channel')
       end
 
       it 'removes the prefix' do
-        subscriber_class.channel 'another.channel', prefix: nil
+        subscriber_class.subscribe channel: 'another.channel', prefix: nil
         expect(subscriber_class.channels).to include('another.channel')
       end
     end
 
     context 'multiple channels' do
-      before { subscriber_class.channel 'foo', 'bar', prefix: 'custom' }
+      before { subscriber_class.subscribe channel: ['foo', 'bar'], prefix: 'custom' }
 
       it 'subscribes to multiple channels' do
         expect(subscriber_class.channels).to eq(['custom.foo', 'custom.bar'])
@@ -82,7 +82,7 @@ describe Chasqui::Subscriber do
     end
 
     context 'custom' do
-      before { subscriber_class.queue 'custom-queue' }
+      before { subscriber_class.subscribe queue: 'custom-queue' }
       it { expect(subscriber_class.queue).to eq('custom-queue') }
     end
   end

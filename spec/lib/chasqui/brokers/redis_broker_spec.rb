@@ -1,18 +1,15 @@
 require 'spec_helper'
 
 class Worker1 < Chasqui::Subscriber
-  channel 'app1'
-  queue 'queue1'
+  subscribe channel: 'app1', queue: 'queue1'
 end
 
 class Worker2 < Chasqui::Subscriber
-  channel 'app2'
-  queue 'queue2'
+  subscribe channel: 'app2', queue: 'queue2'
 end
 
 class Worker3 < Chasqui::Subscriber
-  channel 'app1'
-  queue 'queue3'
+  subscribe channel: 'app1', queue: 'queue3'
 end
 
 describe Chasqui::RedisBroker do

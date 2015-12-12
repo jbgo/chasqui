@@ -70,7 +70,7 @@ subscriber to handle events published to the `user.sign-up` channel.
     require 'chasqui'
 
     class UserSignUpSubscriber < Chasqui::Subscriber
-      channel 'user.sign-up'
+      subscribe channel: 'user.sign-up'
 
       def perform(payload)
         # Do something when the user signs up.

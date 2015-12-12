@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 class MockSubscriber < Chasqui::Subscriber
-  channel 'foo-channel', prefix: nil
-  queue 'foo-queue'
+  subscribe channel: 'foo-channel', prefix: nil, queue: 'foo-queue'
 
   def perform(payload)
     self.class.info[:event] = event

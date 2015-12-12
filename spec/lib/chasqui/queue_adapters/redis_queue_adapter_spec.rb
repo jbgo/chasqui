@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 class MySubscriber < Chasqui::Subscriber
-  channel 'channel-name'
-  queue 'queue-name'
+  subscribe channel: 'channel-name', queue: 'queue-name'
 end
 
 describe Chasqui::QueueAdapters::RedisQueueAdapter do

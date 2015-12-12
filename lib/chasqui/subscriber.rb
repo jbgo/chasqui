@@ -33,30 +33,39 @@ module Chasqui
         )
       end
 
-      def channel(*names)
-        options = names.last.kind_of?(Hash) ? names.pop : {}
-        prefix = options.fetch :prefix, Chasqui.channel_prefix
+      def subscribe(args={})
+        queue = args.fetch :queue, Chasqui.default_queue
 
-        subscriber_config.channels = names.map do |name|
-          prefix ? "#{prefix}.#{name}" : name
-        end
+        subscriber_config.channels = prefixed_channels args
+        subscriber_config.queue = queue
       end
 
       def channels
         subscriber_config.channels
       end
 
-      def queue(*args)
-        if args.any?
-          subscriber_config.queue = args.first
-        else
-          subscriber_config.queue
-        end
+      def queue
+        subscriber_config.queue
       end
 
       def inherited(subclass)
         @subscribers ||= Set.new
         @subscribers << subclass
+      end
+
+      private
+
+      def prefixed_channels(args)
+        channel = args.fetch :channel, Chasqui.channel_prefix
+        prefix = args.fetch :prefix, Chasqui.channel_prefix
+
+        channels = channel.respond_to?(:each) ? channel : [channel]
+
+        if prefix
+          channels.map { |c| "#{prefix}.#{c}" }
+        else
+          channels
+        end
       end
     end
   end
