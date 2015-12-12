@@ -47,7 +47,7 @@ module ChasquiSpecHelpers
     @subscriber_registry[class_name] ||= Class.new
     
     @subscriber_registry[class_name].tap do |sub|
-      sub.include Chasqui::Subscriber
+      sub.send :include, Chasqui::Subscriber
       sub.subscribe channel: channel, queue: queue
     end
   end
