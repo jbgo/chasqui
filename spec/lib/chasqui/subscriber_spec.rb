@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Chasqui::Subscriber do
-  let(:subscriber_class) { Class.new(Chasqui::Subscriber) }
+  let(:subscriber_class) { Class.new { include Chasqui::Subscriber } }
   let(:redis) { Redis.new }
 
   describe '#event' do
@@ -99,7 +99,11 @@ describe Chasqui::Subscriber do
 
   describe '.inherited' do
     it 'maintains a registry of inherited classes' do
-      klass = Class.new(Chasqui::Subscriber)
+      klass = Class.new do
+        include Chasqui::Subscriber
+        subscribe
+      end
+
       expect(Chasqui::Subscriber.subscribers).to include(klass)
     end
   end

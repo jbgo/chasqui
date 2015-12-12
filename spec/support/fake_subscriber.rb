@@ -1,4 +1,5 @@
-class FakeSubscriber < Chasqui::Subscriber
+class FakeSubscriber
+  include Chasqui::Subscriber
   attr_reader :events
 
   def initialize(queue, channel)

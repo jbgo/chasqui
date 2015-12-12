@@ -1,6 +1,10 @@
 module Chasqui
-  class Subscriber
+  module Subscriber
     attr_reader :event
+
+    def self.included(klass)
+      klass.extend Chasqui::Subscriber::ClassMethods
+    end
 
     def initialize(options={})
       @event = options.fetch(:event)
@@ -24,6 +28,13 @@ module Chasqui
     class << self
       attr_reader :subscribers
 
+      def register_subscriber(klass)
+        @subscribers ||= Set.new
+        @subscribers << klass
+      end
+    end
+
+    module ClassMethods
       SubscriberConfig = Struct.new :channels, :queue
 
       def subscriber_config
@@ -38,6 +49,8 @@ module Chasqui
 
         subscriber_config.channels = prefixed_channels args
         subscriber_config.queue = queue
+
+        Chasqui::Subscriber.register_subscriber self
       end
 
       def channels
@@ -46,11 +59,6 @@ module Chasqui
 
       def queue
         subscriber_config.queue
-      end
-
-      def inherited(subclass)
-        @subscribers ||= Set.new
-        @subscribers << subclass
       end
 
       private

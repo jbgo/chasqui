@@ -1,6 +1,7 @@
 require 'spec_helper'
 
-class MySubscriber < Chasqui::Subscriber
+class MySubscriber
+  include Chasqui::Subscriber
   subscribe channel: 'channel-name', queue: 'queue-name'
 end
 

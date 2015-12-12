@@ -1,6 +1,7 @@
 require 'spec_helper'
 
-class MockSubscriber < Chasqui::Subscriber
+class MockSubscriber
+  include Chasqui::Subscriber
   subscribe channel: 'foo-channel', prefix: nil, queue: 'foo-queue'
 
   def perform(payload)

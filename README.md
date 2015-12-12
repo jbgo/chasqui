@@ -69,7 +69,8 @@ subscriber to handle events published to the `user.sign-up` channel.
     # file: subscriber1.rb
     require 'chasqui'
 
-    class UserSignUpSubscriber < Chasqui::Subscriber
+    class UserSignUpSubscriber
+      include Chasqui::Subscriber
       subscribe channel: 'user.sign-up'
 
       def perform(payload)

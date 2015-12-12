@@ -1,14 +1,17 @@
 require 'spec_helper'
 
-class Worker1 < Chasqui::Subscriber
+class Worker1
+  include Chasqui::Subscriber
   subscribe channel: 'app1', queue: 'queue1'
 end
 
-class Worker2 < Chasqui::Subscriber
+class Worker2
+  include Chasqui::Subscriber
   subscribe channel: 'app2', queue: 'queue2'
 end
 
-class Worker3 < Chasqui::Subscriber
+class Worker3
+  include Chasqui::Subscriber
   subscribe channel: 'app1', queue: 'queue3'
 end
 
