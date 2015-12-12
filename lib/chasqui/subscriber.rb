@@ -31,6 +31,7 @@ module Chasqui
       def register_subscriber(klass)
         @subscribers ||= Set.new
         @subscribers << klass
+        Chasqui.register klass
       end
     end
 

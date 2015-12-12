@@ -28,5 +28,3 @@ class UserCancelSubscriber
     log_event self, payload
   end
 end
-
-Chasqui.autoregister!

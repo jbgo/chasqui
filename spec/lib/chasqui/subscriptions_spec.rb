@@ -13,6 +13,8 @@ describe Chasqui::Subscriptions do
   before do
     reset_config
 
+    allow(Chasqui).to receive(:register)
+
     [a, b, c, d].each do |subscriber|
       expect(queue_adapter).to receive(:bind).with(subscriber)
       subject.register subscriber
@@ -55,21 +57,4 @@ describe Chasqui::Subscriptions do
     expect(remaining.size).to eq(1)
     expect(remaining).to include(d)
   end
-
-  describe '#autoregister!' do
-    before { Chasqui::Subscriber.instance_variable_set :@subscribers, nil }
-
-    it 'registers all known subscribers' do
-      sub1 = new_subscriber 'AutoSub1', channel: 'ch1', queue: 'foo', force: true
-      sub2 = new_subscriber 'AutoSub2', channel: 'ch2', queue: 'bar', force: true
-
-      # necessary precondition
-      expect(Chasqui::Subscriber.subscribers).to eq(Set.new [sub1, sub2])
-
-      expect(subject).to receive(:register).with(sub1)
-      expect(subject).to receive(:register).with(sub2)
-      subject.autoregister!
-    end
-  end
-
 end

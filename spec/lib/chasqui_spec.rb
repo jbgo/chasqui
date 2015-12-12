@@ -35,7 +35,7 @@ describe Chasqui do
   end
 
   describe 'subscription management delegates' do
-    [:register, :unregister, :autoregister!].each do |m|
+    [:register, :unregister].each do |m|
       it "delegates :#{m} to #subscriptions" do
         expect(Chasqui.subscriptions).to receive(m)
         Chasqui.send m

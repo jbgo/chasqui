@@ -38,7 +38,10 @@ describe Chasqui::Subscriber do
   end
 
   describe '.channels' do
-    before { subscriber_class.subscribe channel: 'some.channel' }
+    before do
+      expect(Chasqui).to receive(:register).with(subscriber_class).at_least(:once)
+      subscriber_class.subscribe channel: 'some.channel'
+    end
 
     context 'default' do
       it { expect(subscriber_class.channels).to include('some.channel') }
@@ -82,7 +85,11 @@ describe Chasqui::Subscriber do
     end
 
     context 'custom' do
-      before { subscriber_class.subscribe queue: 'custom-queue' }
+      before do
+        expect(Chasqui).to receive(:register).with(subscriber_class)
+        subscriber_class.subscribe queue: 'custom-queue'
+      end
+
       it { expect(subscriber_class.queue).to eq('custom-queue') }
     end
   end
@@ -98,6 +105,8 @@ describe Chasqui::Subscriber do
   end
 
   describe '.inherited' do
+    before { allow(Chasqui).to receive(:register) }
+
     it 'maintains a registry of inherited classes' do
       klass = Class.new do
         include Chasqui::Subscriber

@@ -81,9 +81,6 @@ subscriber to handle events published to the `user.sign-up` channel.
       end
     end
 
-    # Registers subscriptions with the broker and generate worker classes.
-    Chasqui.autoregister!
-
 ### Running Sidekiq subscribers
 
 Here is how you can run the subscriber as a sidekiq worker:
