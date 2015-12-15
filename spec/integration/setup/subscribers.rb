@@ -6,8 +6,8 @@ class UserSignupSubscriber
   include Chasqui::Subscriber
   subscribe channel: 'user.signup', queue: 'app1'
 
-  def perform(payload)
-    log_event self, payload
+  def perform(*args)
+    log_event self, args
   end
 end
 
@@ -15,8 +15,8 @@ class AccountSubscriber
   include Chasqui::Subscriber
   subscribe channel: ['account.credit', 'account.debit'], queue: 'app2'
 
-  def perform(payload)
-    log_event self, payload
+  def perform(*args)
+    log_event self, args
   end
 end
 
@@ -24,7 +24,7 @@ class UserCancelSubscriber
   include Chasqui::Subscriber
   subscribe channel: 'user.cancel', queue: 'app2'
 
-  def perform(payload)
-    log_event self, payload
+  def perform(*args)
+    log_event self, args
   end
 end

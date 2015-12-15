@@ -4,9 +4,9 @@ class MockSubscriber
   include Chasqui::Subscriber
   subscribe channel: 'foo-channel', prefix: nil, queue: 'foo-queue'
 
-  def perform(payload)
+  def perform(*args)
     self.class.info[:event] = event
-    self.class.info[:payload] = payload
+    self.class.info[:payload] = args
     self.class.info[:redis] = redis
     self.class.info[:logger] = logger
   end
@@ -53,7 +53,7 @@ describe Chasqui::Worker do
       it 'delegates #perform to the subscriber' do
         event = {
           'channel' => 'foo-channel',
-          'payload' => { 'some' => 'data' }
+          'payload' => [{ 'some' => 'data' }]
         }
 
         worker.perform event
@@ -80,7 +80,7 @@ describe Chasqui::Worker do
         it 'delegates #perform to the subscriber' do
           event = {
             'channel' => 'foo-channel',
-            'payload' => { 'some' => 'data' }
+            'payload' => [{ 'some' => 'data' }]
           }
 
           sidekiq_worker = worker.new

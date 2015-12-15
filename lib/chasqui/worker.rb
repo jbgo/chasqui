@@ -52,7 +52,7 @@ module Chasqui
 
         def self.perform(event)
           instance = @subscriber.new event: event, logger: Resque.logger
-          instance.perform event['payload']
+          instance.perform *event['payload']
         end
       end
     end
@@ -72,7 +72,7 @@ module Chasqui
 
         def perform(event)
           instance = self.class.subscriber.new event: event, logger: logger
-          instance.perform event['payload']
+          instance.perform *event['payload']
         end
       end
     end
