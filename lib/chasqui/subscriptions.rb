@@ -35,12 +35,12 @@ module Chasqui
     private
 
     def register_one(channel, subscriber)
-      q = subscriber.queue.to_s
-      c = channel.to_s
+      queue = subscriber.queue.to_s
+      channel = channel.to_s
 
-      @subscriptions[q] ||= {}
-      @subscriptions[q][c] ||= {}
-      @subscriptions[q][c][subscriber.object_id] = subscriber
+      @subscriptions[queue] ||= {}
+      @subscriptions[queue][channel] ||= {}
+      @subscriptions[queue][channel][subscriber.object_id] = subscriber
 
       @subscribers[subscriber.object_id] = subscriber
 
@@ -48,13 +48,13 @@ module Chasqui
     end
 
     def unregister_one(channel, subscriber)
-      q = subscriber.queue.to_s
-      c = channel.to_s
+      queue = subscriber.queue.to_s
+      channel = channel.to_s
 
       queue_adapter.unbind subscriber
 
-      if @subscriptions[q] && @subscriptions[q][c]
-        @subscriptions[q][c].delete subscriber.object_id
+      if @subscriptions[queue] && @subscriptions[queue][channel]
+        @subscriptions[queue][channel].delete subscriber.object_id
       end
 
       @subscribers.delete subscriber.object_id
