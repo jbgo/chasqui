@@ -9,15 +9,15 @@ Chasqui adds persistent
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add this line to your application's Gemfile
 
     gem 'chasqui'
 
-And then execute:
+then execute
 
     $ bundle
 
-Or install it yourself as:
+or install it yourself as
 
     $ gem install chasqui
 
@@ -35,24 +35,25 @@ you already have everything you need to get started with Chasqui.
 
     chasqui -r redis://localhost:6379/0
 
-The broker is a ruby daemon that listens for events (messages) published to a
-channel (topic) and forwards those events to all subscribers of that channel.
-In order to work, your broker must use the same Redis database as your
-Sidekiq/Resque workers.  For a list of available broker options, see `chasqui
+The broker is a ruby daemon that listens for events (messages) published to
+channels (topics) and forwards those events to registered subscribers.  In
+order to work, your broker must use the same Redis database as your
+Sidekiq/Resque workers. For a list of available broker options, see `chasqui
 --help`.
 
 ### Publish events
 
     Chasqui.publish 'order.purchased', user, order
 
-Use `Chasqui.publish` to publish an event to a channel. The remaining arguments
-can be any JSON-serializable data to pass to the subscriber workers' perform
-methods.
+Publishes an event to the `order.purchased` channel and include information
+about the user and order that triggered the event. Any arguments after the
+channel name must be JSON-serializable.
 
 ### Subscribe to events
 
     Chasqui.subscriptions do
       subscribe 'order.purchased', PurchasedOrderWorker
+      # ...more subscriptions
     end
 
 The above code tells Chasqui to place events published to the `order.purchased`
@@ -63,22 +64,19 @@ consider prefixing your queue names with a unique identifier for your
 application.
 
     Chasqui.subscriptions queue_name_prefix: 'app_id' do
-      subscribe 'order.purchased', with: PurchasedOrderWorkerS
+      subscribe 'order.purchased', with: PurchasedOrderWorker
     end
 
 Now the `PurchasedOrderWorker` will pull jobs from the `app_id:pubsub` queue
 instead of the `pubsub` queue specified previously in the worker class.
 
-You can use a callable object instead of a worker class to handle events.
+You can also use a callable object instead of a worker class to handle events.
 
     Chasqui.subscriptions queue: 'app_id:pubsub' do
       subscribe 'order.purchased', ->(event, user, order) {
         logger.info event.to_json
       }
     end
-
-When using a proc to handle event, Chasqui defines a worker class with a
-`#perform` method that calls the event.
 
 ### Define workers to handle events
 
