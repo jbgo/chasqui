@@ -45,7 +45,7 @@ Sidekiq/Resque workers. For a list of available broker options, see `chasqui
 
     Chasqui.publish 'order.purchased', user, order
 
-Publishes an event to the `order.purchased` channel and include information
+Publish an event to the `order.purchased` channel and include information
 about the user and order that triggered the event. Any arguments after the
 channel name must be JSON-serializable.
 
