@@ -14,27 +14,51 @@ require "chasqui/subscriber"
 require "chasqui/subscriptions"
 require "chasqui/worker"
 
+# A persistent implementation of the publish-subscribe messaging pattern for
+# Resque and Sidekiq workers.
 module Chasqui
-
-  class ConfigurationError < StandardError; end
 
   class << self
     extend Forwardable
     def_delegators :config, *CONFIG_SETTINGS
     def_delegators :subscriptions, :register, :unregister
 
+    # Yields an object for configuring Chasqui.
+    #
+    # @example
+    #   Chasqui.configure do |config|
+    #     config.redis = 'redis://my-redis.example.com:6379'
+    #     config.channel_prefix = 'custom.prefix'
+    #   end
+    #
+    # @see Config See Chasqui::Config for a full list of configuration options.
+    #
+    # @yieldparam config [Config]
     def configure(&block)
       yield config
     end
 
+    # Returns the Chasqui configuration object.
+    #
+    # @see Config See Chasqui::Config for a full list of configuration options.
+    #
+    # @return [Config]
     def config
       @config ||= Config.new
     end
 
+    # Publish an event to a channel.
+    #
+    # @param [String] channel name
+    # @param args [Array<#to_json>] an array of JSON serializable objects that
+    #   comprise the event's payload.
     def publish(channel, *args)
       redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
+    # Returns the mapping of queues and channels to subscriber classes.
+    #
+    # @return [Subscriptions]
     def subscriptions
       @subscriptions ||= Subscriptions.new build_queue_adapter
     end

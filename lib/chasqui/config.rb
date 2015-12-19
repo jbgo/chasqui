@@ -1,16 +1,10 @@
 module Chasqui
 
-  Defaults = {
-    default_queue: 'chasqui-subscribers',
-    inbox_queue: 'inbox',
-    redis_namespace: 'chasqui',
-    broker_poll_interval: 3,
-    queue_adapter: -> { QueueAdapters::RedisQueueAdapter }
-  }.freeze
-
+  # Raised when configured settings prevent Chasqui from working correctly.
   class ConfigurationError < StandardError
   end
 
+  # @visibility private
   CONFIG_SETTINGS = [
     :broker_poll_interval,
     :channel_prefix,
@@ -22,7 +16,21 @@ module Chasqui
     :worker_backend
   ]
 
+  # Stores and manages all Chasqui configuration settings.
   class Config < Struct.new(*CONFIG_SETTINGS)
+
+    # Default values for all configuration settings.
+    Defaults = {
+      broker_poll_interval: 3,
+      channel_prefix: nil,
+      default_queue: 'chasqui-subscribers',
+      inbox_queue: 'inbox',
+      logger: STDOUT,
+      queue_adapter: -> { QueueAdapters::RedisQueueAdapter },
+      redis_namespace: 'chasqui',
+      worker_backend: nil
+    }.freeze
+
     def default_queue
       self[:default_queue] ||= Defaults.fetch(:default_queue)
     end
