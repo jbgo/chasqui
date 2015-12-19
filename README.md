@@ -3,8 +3,9 @@
 
 # Chasqui
 
-Chasqui adds persistent publish-subscribe (pub-sub) messaging capabilities to
-Sidekiq and Resque workers.
+Chasqui adds persistent
+[publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+(pub-sub) messaging capabilities to Sidekiq and Resque workers.
 
 ## Installation
 
