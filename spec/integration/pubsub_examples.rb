@@ -67,6 +67,7 @@ shared_examples 'pubsub' do |start_workers_method|
             actual = JSON.parse payload
             expect(actual['channel']).to eq(expected[:channel])
             expect(actual['payload']).to eq(expected[:payload])
+            expect(actual['payload']).to eq(actual['worker_args'])
           end
         end
       end
