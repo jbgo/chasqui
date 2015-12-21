@@ -12,6 +12,7 @@ require "chasqui/queue_adapter"
 require "chasqui/queue_adapters/redis_queue_adapter"
 require "chasqui/subscriber"
 require "chasqui/subscriptions"
+require "chasqui/sidekiq/subscription_builder"
 require "chasqui/worker"
 
 # A persistent implementation of the publish-subscribe messaging pattern for
