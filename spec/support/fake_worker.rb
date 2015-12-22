@@ -1,0 +1,2 @@
+class FakeWorker
+end

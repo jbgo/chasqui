@@ -5,18 +5,12 @@ module Chasqui
       def_delegators :Chasqui, :redis
 
       def bind(subscriber)
-        Chasqui::Worker.create subscriber
-
-        subscriber.channels.each do |channel|
-          redis.sadd key(channel), queue_description(subscriber)
-          worker_redis.sadd 'queues', subscriber.queue
-        end
+        redis.sadd key(subscriber.channel), queue_description(subscriber)
+        worker_redis.sadd 'queues', subscriber.queue
       end
 
       def unbind(subscriber)
-        subscriber.channels.each do |channel|
-          redis.srem key(channel), queue_description(subscriber)
-        end
+        redis.srem key(subscriber.channel), queue_description(subscriber)
       end
 
       private
@@ -27,7 +21,7 @@ module Chasqui
 
       def queue_description(subscriber)
         queue_name = [worker_namespace, 'queue', subscriber.queue].compact.join(':')
-        "#{worker_backend}/Chasqui::Workers::#{subscriber.name}/#{queue_name}"
+        "#{worker_backend}/#{subscriber.worker.name}/#{queue_name}"
       end
 
       def worker_redis
@@ -35,7 +29,7 @@ module Chasqui
         when :resque
           Resque.redis
         when :sidekiq
-          Sidekiq.redis { |r| r }
+          ::Sidekiq.redis { |r| r }
         end
       end
 

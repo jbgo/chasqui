@@ -1,14 +1,11 @@
 require 'spec_helper'
 
-class MySubscriber
-  include Chasqui::Subscriber
-  subscribe channel: 'channel-name', queue: 'queue-name'
-end
-
 describe Chasqui::QueueAdapters::RedisQueueAdapter do
   it_behaves_like 'a queue adapter'
 
-  let(:subscriber) { MySubscriber }
+  let(:subscriber) do
+    Chasqui::Subscriber.new('channel-name', 'queue-name', FakeWorker)
+  end
 
   describe '#bind / #unbind' do
     let(:key) { 'subscriptions:channel-name' }
@@ -26,12 +23,7 @@ describe Chasqui::QueueAdapters::RedisQueueAdapter do
       it 'persists the subscriptions to redis' do
         subject.bind(subscriber)
         subscriptions = redis.smembers(key)
-        expect(subscriptions).to eq(
-          ['resque/Chasqui::Workers::MySubscriber/resque:queue:queue-name'])
-
-        expect(Chasqui::Workers.constants).to include(:MySubscriber)
-        worker = Chasqui::Workers.const_get :MySubscriber
-        expect(worker.subscriber).to eq(MySubscriber)
+        expect(subscriptions).to eq(['resque/FakeWorker/resque:queue:queue-name'])
 
         redis.sadd key, 'random'
 
@@ -52,13 +44,8 @@ describe Chasqui::QueueAdapters::RedisQueueAdapter do
         it 'persists the subscription to redis' do
           subject.bind(subscriber)
           subscriptions = redis.smembers('subscriptions:channel-name')
-          expect(subscriptions).to eq(
-            ['sidekiq/Chasqui::Workers::MySubscriber/queue:queue-name'])
+          expect(subscriptions).to eq(['sidekiq/FakeWorker/queue:queue-name'])
           expect(redis_no_namespace.smembers 'queues').to eq(['queue-name'])
-
-          expect(Chasqui::Workers.constants).to include(:MySubscriber)
-          worker = Chasqui::Workers.const_get :MySubscriber
-          expect(worker.subscriber).to eq(MySubscriber)
 
           redis.sadd key, 'random'
 
