@@ -23,7 +23,6 @@ module Chasqui
   class << self
     extend Forwardable
     def_delegators :config, *CONFIG_SETTINGS
-    def_delegators :subscriptions, :register, :unregister
 
     # Yields an object for configuring Chasqui.
     #

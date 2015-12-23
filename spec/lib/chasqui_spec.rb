@@ -34,15 +34,6 @@ describe Chasqui do
     it { expect(subject.queue_adapter).to be_instance_of(Chasqui::QueueAdapter::RedisQueueAdapter) }
   end
 
-  describe 'subscription management delegates' do
-    [:register, :unregister].each do |m|
-      it "delegates :#{m} to #subscriptions" do
-        expect(Chasqui.subscriptions).to receive(m)
-        Chasqui.send m
-      end
-    end
-  end
-
   describe '.publish' do
     before { reset_chasqui }
 
