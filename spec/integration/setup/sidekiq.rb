@@ -21,7 +21,7 @@ class UserSignupWorker
   end
 end
 
-class AccountWorker
+class TransactionWorker
   include Sidekiq::Worker
   sidekiq_options queue: 'app2'
 
