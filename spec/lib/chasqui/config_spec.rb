@@ -4,11 +4,11 @@ describe Chasqui::Config do
 
   context 'defaults' do
     it { expect(subject.channel_prefix).to be nil }
-    it { expect(subject.default_queue).to eq('chasqui-subscribers') }
+    it { expect(subject.default_queue).to eq('chasqui-workers') }
     it { expect(subject.inbox_queue).to eq('inbox') }
     it { expect(subject.redis.client.db).to eq(0) }
     it { expect(subject.broker_poll_interval).to eq(3) }
-    it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapters::RedisQueueAdapter) }
+    it { expect(subject.queue_adapter).to eq(Chasqui::QueueAdapter::RedisQueueAdapter) }
 
     it do
       # remove chasqui's test environment logger

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Chasqui::QueueAdapters::RedisQueueAdapter do
+describe Chasqui::QueueAdapter::RedisQueueAdapter do
   it_behaves_like 'a queue adapter'
 
   let(:subscriber) do

@@ -23,10 +23,10 @@ module Chasqui
     Defaults = {
       broker_poll_interval: 3,
       channel_prefix: nil,
-      default_queue: 'chasqui-subscribers',
+      default_queue: 'chasqui-workers',
       inbox_queue: 'inbox',
       logger: STDOUT,
-      queue_adapter: -> { QueueAdapters::RedisQueueAdapter },
+      queue_adapter: -> { QueueAdapter::RedisQueueAdapter },
       redis_namespace: 'chasqui',
       worker_backend: nil
     }.freeze

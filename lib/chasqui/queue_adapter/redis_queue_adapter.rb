@@ -1,5 +1,5 @@
 module Chasqui
-  module QueueAdapters
+  module QueueAdapter
     class RedisQueueAdapter
       extend Forwardable
       def_delegators :Chasqui, :redis
