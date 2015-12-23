@@ -2,14 +2,17 @@ require 'spec_helper'
 
 class Worker1
   @queue = 'queue1'
+  def self.perform(event, *args); end
 end
 
 class Worker2
   @queue = 'queue2'
+  def self.perform(event, *args); end
 end
 
 class Worker3
   @queue = 'queue3'
+  def self.perform(event, *args); end
 end
 
 describe Chasqui::RedisBroker do

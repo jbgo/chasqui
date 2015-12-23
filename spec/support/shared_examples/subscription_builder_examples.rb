@@ -74,11 +74,12 @@ shared_examples 'a subscription builder' do |worker|
         expect(worker.name).to eq('Chasqui::Workers::BusyChannelWorker')
         expect(queue_name(worker)).to eq(queue)
 
-        expect(perform(worker, 3)).to eq(6)
+        event = { 'payload' => [3] }
+        expect(perform(worker, event)).to eq(6)
         expect_worker_to_support_backend(worker)
       end
 
-      builder.on channel, ->(x) { x + x }, queue_name_prefix: 'app_id'
+      builder.on channel, ->(event, x) { x + x }, queue_name_prefix: 'app_id'
     end
 
     context 'default options' do

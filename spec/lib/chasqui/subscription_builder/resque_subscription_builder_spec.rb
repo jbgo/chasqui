@@ -1,7 +1,12 @@
 require 'spec_helper'
 
 describe Chasqui::ResqueSubscriptionBuilder do
-  resque_worker = Class.new { @queue = 'pubsub' }
+  resque_worker = Class.new do
+    @queue = 'pubsub'
+
+    def self.perform(event, *args)
+    end
+  end
 
   it_behaves_like 'a subscription builder', resque_worker
 

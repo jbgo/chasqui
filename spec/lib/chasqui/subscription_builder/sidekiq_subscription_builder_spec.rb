@@ -4,6 +4,9 @@ describe Chasqui::SidekiqSubscriptionBuilder do
   sidekiq_worker = Class.new do
     include Sidekiq::Worker
     sidekiq_options queue: 'pubsub'
+
+    def perform(event, *args)
+    end
   end
 
   it_behaves_like 'a subscription builder', sidekiq_worker
