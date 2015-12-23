@@ -1,5 +1,6 @@
 module Chasqui
   class ResqueSubscriptionBuilder < SubscriptionBuilder
+
     def get_queue_name(worker)
       worker.instance_variable_get :@queue
     end
@@ -14,5 +15,16 @@ module Chasqui
         define_singleton_method :perform, callable
       end
     end
+
+    def redefine_perform_method(worker)
+      return if worker.respond_to?(:perform_with_event)
+
+      worker.instance_eval do
+        class << self
+          yield self
+        end
+      end
+    end
+
   end
 end

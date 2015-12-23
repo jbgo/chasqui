@@ -49,6 +49,15 @@ module Chasqui
         Chasqui::Workers.const_set worker_class_name(channel), worker
       end
 
+      redefine_perform_method(worker) do |klass|
+        klass.send :define_method, :perform_with_event do |event|
+          perform_without_event event, *event['payload']
+        end
+
+        klass.send :alias_method, :perform_without_event, :perform
+        klass.send :alias_method, :perform, :perform_with_event
+      end
+
       worker
     end
 

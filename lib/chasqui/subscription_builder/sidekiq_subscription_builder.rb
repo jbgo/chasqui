@@ -15,5 +15,11 @@ module Chasqui
         define_method :perform, callable
       end
     end
+
+    def redefine_perform_method(worker, &block)
+      return if worker.instance_methods.include?(:perform_with_event)
+
+      yield worker
+    end
   end
 end

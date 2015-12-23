@@ -17,7 +17,7 @@ class UserSignupWorker
   sidekiq_options queue: 'app1'
 
   def perform(event, *args)
-    log_event self, event, args
+    log_event self, event, *args
   end
 end
 
@@ -26,7 +26,7 @@ class TransactionWorker
   sidekiq_options queue: 'app2'
 
   def perform(event, *args)
-    log_event self, event, args
+    log_event self, event, *args
   end
 end
 
@@ -35,7 +35,7 @@ class UserCancelWorker
   sidekiq_options queue: 'app2'
 
   def perform(event, *args)
-    log_event self, event, args
+    log_event self, event, *args
   end
 end
 
