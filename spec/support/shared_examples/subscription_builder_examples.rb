@@ -11,7 +11,6 @@ shared_examples 'a subscription builder' do |worker|
     let(:channel) { 'busy.channel' }
     let(:queue) { 'pubsub' }
 
-    # TODO ensure this conforms to the subscriptions interface
     let(:subscriptions) { double }
 
     let(:builder) { described_class.new subscriptions }
@@ -80,6 +79,20 @@ shared_examples 'a subscription builder' do |worker|
       end
 
       builder.on channel, ->(x) { x + x }, queue_name_prefix: 'app_id'
+    end
+
+    context 'default options' do
+      let(:builder) do
+        described_class.new subscriptions, queue_name_prefix: 'unique', queue: 'low-priority'
+      end
+
+      it 'uses options supplied during initialization when not supplied to #on' do
+        expect(subscriptions).to receive(:register) do |subscriber|
+          expect(subscriber.queue).to eq('unique:high-priority')
+        end
+
+        builder.on channel, worker, queue: 'high-priority'
+      end
     end
   end
 end

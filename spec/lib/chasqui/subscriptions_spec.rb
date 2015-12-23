@@ -5,10 +5,10 @@ describe Chasqui::Subscriptions do
 
   subject { Chasqui::Subscriptions.new queue_adapter }
 
-  let(:a) { new_subscriber 'SubscriberA', channel: 'ch1', queue: 'foo' }
-  let(:b) { new_subscriber 'SubscriberB', channel: 'ch1', queue: 'bar' }
-  let(:c) { new_subscriber 'SubscriberC', channel: 'ch2', queue: 'foo' }
-  let(:d) { new_subscriber 'SubscriberD', channel: 'ch1', queue: 'foo' }
+  let(:a) { Chasqui::Subscriber.new 'ch1', 'foo', double('workerA') }
+  let(:b) { Chasqui::Subscriber.new 'ch1', 'bar', double('workerB') }
+  let(:c) { Chasqui::Subscriber.new 'ch2', 'foo', double('workerC') }
+  let(:d) { Chasqui::Subscriber.new 'ch1', 'foo', double('workerD') }
 
   before do
     reset_config

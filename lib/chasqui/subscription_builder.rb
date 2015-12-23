@@ -3,13 +3,15 @@ module Chasqui
   end
 
   class SubscriptionBuilder
-    attr_reader :subscriptions
+    attr_reader :subscriptions, :default_options
 
-    def initialize(subscriptions)
+    def initialize(subscriptions, options={})
       @subscriptions = subscriptions
+      @default_options = options
     end
 
     def on(channel, worker_or_callable, options={})
+      options = default_options.merge(options)
       worker = build_worker(channel, worker_or_callable, options)
 
       queue = full_queue_name(worker, options)

@@ -30,23 +30,4 @@ module ChasquiSpecHelpers
   def flush_redis
     nnredis.keys('*').each { |k| nnredis.del k }
   end
-
-  def new_subscriber(class_name, options={})
-    queue = options.fetch :queue
-    channel = options.fetch :channel
-
-    @subscriber_registry ||= {}
-
-    if @subscriber_registry[class_name] && options[:force]
-      Object.send :remove_const, class_name
-      @subscriber_registry[class_name] = nil
-    end
-
-    @subscriber_registry[class_name] ||= Class.new
-    
-    @subscriber_registry[class_name].tap do |sub|
-      sub.send :include, Chasqui::Subscriber
-      sub.subscribe channel: channel, queue: queue
-    end
-  end
 end

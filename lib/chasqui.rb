@@ -15,7 +15,6 @@ require "chasqui/subscriptions"
 require "chasqui/subscription_builder"
 require "chasqui/subscription_builder/resque_subscription_builder"
 require "chasqui/subscription_builder/sidekiq_subscription_builder"
-require "chasqui/worker"
 
 # A persistent implementation of the publish-subscribe messaging pattern for
 # Resque and Sidekiq workers.
@@ -64,6 +63,20 @@ module Chasqui
     # @return [Subscriptions]
     def subscriptions
       @subscriptions ||= Subscriptions.new build_queue_adapter
+    end
+
+    def subscribe(options={})
+      builder = subscription_builder_for_backend.new(subscriptions, options)
+      builder.instance_eval &Proc.new
+    end
+
+    def subscription_builder_for_backend
+      case worker_backend
+      when :resque
+        ResqueSubscriptionBuilder
+      when :sidekiq
+        SidekiqSubscriptionBuilder
+      end
     end
 
     private
