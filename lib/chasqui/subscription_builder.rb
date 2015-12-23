@@ -42,14 +42,12 @@ module Chasqui
     end
 
     def build_worker(channel, worker_or_callable, options={})
-      worker =
-        if worker_or_callable.respond_to? :call
-          define_worker_class(channel, worker_or_callable, options)
-        else
-          worker_or_callable
-        end
+      worker = worker_or_callable
 
-      Chasqui::Workers.const_set worker_class_name(channel), worker
+      if worker.respond_to? :call
+        worker = define_worker_class(channel, worker_or_callable, options)
+        Chasqui::Workers.const_set worker_class_name(channel), worker
+      end
 
       worker
     end

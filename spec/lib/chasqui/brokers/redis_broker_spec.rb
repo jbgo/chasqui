@@ -1,18 +1,15 @@
 require 'spec_helper'
 
 class Worker1
-  include Chasqui::Subscriber
-  subscribe channel: 'app1', queue: 'queue1'
+  @queue = 'queue1'
 end
 
 class Worker2
-  include Chasqui::Subscriber
-  subscribe channel: 'app2', queue: 'queue2'
+  @queue = 'queue2'
 end
 
 class Worker3
-  include Chasqui::Subscriber
-  subscribe channel: 'app1', queue: 'queue3'
+  @queue = 'queue3'
 end
 
 describe Chasqui::RedisBroker do
@@ -27,9 +24,11 @@ describe Chasqui::RedisBroker do
 
   describe '#forward_event' do
     before do
-      Chasqui.register Worker1
-      Chasqui.register Worker2
-      Chasqui.register Worker3
+      Chasqui.subscribe do
+        on 'app1', Worker1
+        on 'app2', Worker2
+        on 'app1', Worker3
+      end
     end
 
     it 'places the event on all subscriber queues' do
@@ -65,7 +64,7 @@ describe Chasqui::RedisBroker do
           Chasqui.publish 'app2', foo: 'bar'
 
           job = JSON.parse nnredis.blpop('queue:queue2')[1]
-          expect(job).to include('class' => 'Chasqui::Workers::Worker2')
+          expect(job).to include('class' => 'Worker2')
 
           event = {
             'channel' => 'app2',
