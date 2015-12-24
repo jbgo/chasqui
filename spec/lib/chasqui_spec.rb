@@ -76,10 +76,13 @@ describe Chasqui do
       end
     end
 
+    before { reset_config }
+
     it 'evaluates the block with a subscription builder binding' do
       results = {}
       worker = Class.new
-      allow(Chasqui).to receive(:subscription_builder_for_backend).and_return(fake_builder)
+      allow(Chasqui::SubscriptionBuilder).to receive(:builder)
+        .and_return(fake_builder.new(nil))
 
       Chasqui.subscribe queue: 'foo' do
         results[:builder] = self
@@ -87,23 +90,7 @@ describe Chasqui do
       end
 
       builder = results[:builder]
-      expect(builder).to be_kind_of(Chasqui::SubscriptionBuilder)
-      expect(builder.subscriptions).to eq(Chasqui.subscriptions)
       expect(fake_builder.handlers.first).to eq(['channel', worker, {}])
-    end
-  end
-
-  describe '.subscription_builder_for_backend' do
-    before { reset_config }
-
-    it 'resque' do
-      Chasqui.config.worker_backend = :resque
-      expect(Chasqui.subscription_builder_for_backend).to eq(Chasqui::ResqueSubscriptionBuilder)
-    end
-
-    it 'resque' do
-      Chasqui.config.worker_backend = :sidekiq
-      expect(Chasqui.subscription_builder_for_backend).to eq(Chasqui::SidekiqSubscriptionBuilder)
     end
   end
 end

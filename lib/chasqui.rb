@@ -65,17 +65,8 @@ module Chasqui
     end
 
     def subscribe(options={})
-      builder = subscription_builder_for_backend.new(subscriptions, options)
+      builder = SubscriptionBuilder.builder(subscriptions, options)
       builder.instance_eval &Proc.new
-    end
-
-    def subscription_builder_for_backend
-      case worker_backend
-      when :resque
-        ResqueSubscriptionBuilder
-      when :sidekiq
-        SidekiqSubscriptionBuilder
-      end
     end
 
     private

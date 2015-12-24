@@ -32,7 +32,30 @@ module Chasqui
       raise NotImplementedError
     end
 
+    def self.builder(subscriptions, options={})
+      builder_for_backend.new subscriptions, options
+    end
+
     private
+
+    def self.builder_for_backend
+      case Chasqui.worker_backend
+      when :resque
+        ResqueSubscriptionBuilder
+      when :sidekiq
+        SidekiqSubscriptionBuilder
+      else
+        msg = <<-ERR.gsub(/^ {8}/, '')
+        No worker backend configured.
+
+            # To configure a worker backend:
+            Chasqui.config do |c|
+              c.worker_backend = :resque # or :sidekiq
+            end
+        ERR
+        raise Chasqui::ConfigurationError.new msg
+      end
+    end
 
     def full_queue_name(worker, options={})
       queue = options.fetch :queue, get_queue_name(worker)
