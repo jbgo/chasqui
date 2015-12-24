@@ -127,7 +127,7 @@ libraries for detailed instructions.
 
     Chasqui.configure do |c|
       c.redis = 'redis://my-redis.example.com:6379'
-      c.channel_prefix = 'com.example.my-app'
+      ...
     end
 
 For a full list of configuration options, see the

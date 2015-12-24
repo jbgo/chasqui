@@ -27,9 +27,9 @@ module Chasqui
     # Yields an object for configuring Chasqui.
     #
     # @example
-    #   Chasqui.configure do |config|
-    #     config.redis = 'redis://my-redis.example.com:6379'
-    #     config.channel_prefix = 'custom.prefix'
+    #   Chasqui.configure do |c|
+    #     c.redis = 'redis://my-redis.example.com:6379'
+    #     ...
     #   end
     #
     # @see Config See Chasqui::Config for a full list of configuration options.
@@ -39,6 +39,8 @@ module Chasqui
       yield config
     end
 
+    # @visibility private
+    #
     # Returns the Chasqui configuration object.
     #
     # @see Config See Chasqui::Config for a full list of configuration options.
@@ -50,23 +52,47 @@ module Chasqui
 
     # Publish an event to a channel.
     #
-    # @param [String] channel name
+    # @param channel [String] the channel name
     # @param args [Array<#to_json>] an array of JSON serializable objects that
     #   comprise the event's payload.
     def publish(channel, *args)
       redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
-    # Returns the mapping of queues and channels to subscriber classes.
+    # Subscribe workers to channels.
+    #
+    #     Chasqui.subscribe(queue: 'high-priority') do
+    #       on 'channel1', Worker1
+    #       on 'channel2', Worker2
+    #       on 'channel3', ->(event) { ... }, queue: 'low-priority'
+    #       ...
+    #     end
+    #
+    # The +.subscribe+ method creates a context for registering workers to
+    # receive events for specified channels. Within a subscribe block you make
+    # calls to the {SubscriptionBuilder#on #on} method to create subscriptions.
+    #
+    # {SubscriptionBuilder#on #on} expects a channel name as the first argument
+    # and either a Resque/Sidekiq worker as the second argument or a callable
+    # object, such as a proc, lambda, or any object that responds to +#call+.
+    #
+    # @see SubscriptionBuilder#on
+    #
+    # @param [Hash] options default options for calls to +#on+. The defaults
+    #   will be overriden by options supplied to the +#on+ method directly.
+    #   See {Chasqui::SubscriptionBuilder#on} for available options.
+    def subscribe(options={})
+      builder = SubscriptionBuilder.builder(subscriptions, options)
+      builder.instance_eval &Proc.new
+    end
+
+    # @visibility private
+    #
+    # Returns the registered subscriptions.
     #
     # @return [Subscriptions]
     def subscriptions
       @subscriptions ||= Subscriptions.new build_queue_adapter
-    end
-
-    def subscribe(options={})
-      builder = SubscriptionBuilder.builder(subscriptions, options)
-      builder.instance_eval &Proc.new
     end
 
     private

@@ -1,5 +1,7 @@
 module Chasqui
   class SidekiqSubscriptionBuilder < SubscriptionBuilder
+    protected
+
     def get_queue_name(worker)
       worker.sidekiq_options['queue']
     end

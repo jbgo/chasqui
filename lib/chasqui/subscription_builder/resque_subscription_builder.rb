@@ -1,5 +1,6 @@
 module Chasqui
   class ResqueSubscriptionBuilder < SubscriptionBuilder
+    protected
 
     def get_queue_name(worker)
       worker.instance_variable_get :@queue
