@@ -19,12 +19,66 @@ module Chasqui
   # Stores and manages all Chasqui configuration settings.
   class Config < Struct.new(*CONFIG_SETTINGS)
 
+    # @!attribute broker_poll_interval
+    #   How long the broker daemon waits for an event before pausing to handle
+    #   signals. Default: +3+
+    #   @return [Fixnum] seconds
+
+    # @!attribute channel_prefix
+    #   A string to prepend to channel names for all published events. This is
+    #   useful for namespacing channel names to prevent collisions with other
+    #   applications that may choose the same channel name for a different type
+    #   of event. Default: +nil+
+    #
+    #   @example
+    #       Chasqui.configure do |c|
+    #         c.channel_prefix = 'com.example.app1'
+    #       end
+    #
+    #       # publishes to channel: "com.example.app1.user.signup"
+    #       Chasqui.publish 'user.signup', user
+    #
+    #   @return [String]
+
+    # @!attribute default_queue
+    #   The queue to use when a worker class does not define a queue and a
+    #   queue option is not supplied to {Chasqui::SubscriptionBuilder#on #on}.
+    #   Default: +"chasqui-workers"+
+    #   @return [String]
+
+    # @!attribute inbox_queue
+    #   The queue that stores published events until they are delivered to
+    #   subscriber (worker) queues. Default: "chasqui-inbox"
+    #   @return [String]
+
+    # @!attribute logger
+    #   The logger to use for the Chasqui broker. Default: +Logger.new(STDOUT)+
+    #   @return [Logger]
+
+    # @!attribute [rw] queue_adapter
+    #   @api private
+    #   The queue adapter to use for binding queues to channels.
+    #   @return [Chasqui::QueueAdapter]
+
+    # @!attribute redis
+    #   Customize the Redis databse connection Chasqui uses.
+    #   Default: +"redis://localhost:6379/0"+
+    #   @return [Redis,String,Hash]
+
+    # @!attribute worker_backend
+    #   The type of worker that will handle events in class to
+    #   {Chasqui.subscribe}. Can be either +resque+ or +sidekiq+. Chasqui will
+    #   attempt to auto-detect the +worker_backend+ if either library is
+    #   loaded. Default: +nil+
+    #   @return [Symbol]
+
+    # @visibility private
     # Default values for all configuration settings.
     Defaults = {
       broker_poll_interval: 3,
       channel_prefix: nil,
       default_queue: 'chasqui-workers',
-      inbox_queue: 'inbox',
+      inbox_queue: 'chasqui-inbox',
       logger: STDOUT,
       queue_adapter: -> { QueueAdapter::RedisQueueAdapter },
       redis_namespace: 'chasqui',

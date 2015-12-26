@@ -48,7 +48,7 @@ describe Chasqui do
       end
 
       payloads.each do |payload|
-        event = JSON.load Chasqui.redis.rpop('inbox')
+        event = JSON.load Chasqui.redis.rpop(Chasqui.config.inbox_queue)
         expect(event['channel']).to eq('test.event')
         expect(event['payload']).to eq(payload)
         expect(event['created_at'].to_f).to be_within(0.1).of(Time.now.to_f)
@@ -58,7 +58,7 @@ describe Chasqui do
 
     it 'supports retries' do
       Chasqui.publish 'test.event', :foo, :bar, foo: 'bar', job_options: { retry: false }
-      event = JSON.load Chasqui.redis.rpop('inbox')
+      event = JSON.load Chasqui.redis.rpop(Chasqui.config.inbox_queue)
       expect(event['retry']).to eq(false)
     end
   end
