@@ -41,7 +41,7 @@ order to work, your broker must use the same Redis database as your
 Sidekiq/Resque workers. For a list of available broker options, see `chasqui
 --help`.
 
-### Publish an events
+### Publish events
 
     Chasqui.publish 'order.purchased', user, order
 
