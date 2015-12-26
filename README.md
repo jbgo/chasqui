@@ -122,7 +122,6 @@ libraries for detailed instructions.
 * [Sidekiq documentation](https://github.com/mperham/sidekiq)
 * [Resque documentation](https://github.com/resque/resque)
 
-
 ### Configuration
 
     Chasqui.configure do |c|
@@ -132,6 +131,14 @@ libraries for detailed instructions.
 
 For a full list of configuration options, see the
 [Chasqui::Config documentation](#).
+
+## Unsubscribing
+
+    Chasqui.unsubscribe 'order.purchased', 'app_id:pubsub'
+
+If you no longer wish to handle events for a channel, you should unsubscribe
+the worker so that the Chasqui broker stops placing jobs on that worker's
+queue.
 
 ## Why Chasqui?
 

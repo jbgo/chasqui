@@ -14,9 +14,9 @@ module Chasqui
 
       @subscriptions[queue] ||= {}
       @subscriptions[queue][channel] ||= {}
-      @subscriptions[queue][channel][subscriber.object_id] = subscriber
+      @subscriptions[queue][channel][subscriber.worker] = subscriber
 
-      @subscribers[subscriber.object_id] = subscriber
+      @subscribers[subscriber.worker] = subscriber
 
       queue_adapter.bind subscriber
     end
@@ -28,10 +28,10 @@ module Chasqui
       queue_adapter.unbind subscriber
 
       if @subscriptions[queue] && @subscriptions[queue][channel]
-        @subscriptions[queue][channel].delete subscriber.object_id
+        @subscriptions[queue][channel].delete subscriber.worker
       end
 
-      @subscribers.delete subscriber.object_id
+      @subscribers.delete subscriber.worker
     end
 
     def find(channel, queue)
@@ -43,7 +43,7 @@ module Chasqui
     end
 
     def subscribed?(subscriber)
-      @subscribers.key? subscriber.object_id
+      @subscribers.key? subscriber.worker
     end
   end
 end

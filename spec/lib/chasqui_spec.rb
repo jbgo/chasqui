@@ -93,4 +93,46 @@ describe Chasqui do
       expect(fake_builder.handlers.first).to eq(['channel', worker, {}])
     end
   end
+
+  FakeWorker1 = Class.new
+  FakeWorker2 = Class.new
+
+  describe '.unsubscribe' do
+    let(:subscriptions) { Chasqui.subscriptions }
+
+    before do
+      reset_chasqui
+      Chasqui.config.queue_adapter = FakeQueueAdapter
+      allow_any_instance_of(FakeQueueAdapter).to receive(:bind)
+    end
+
+    it 'unsubscribes all workers' do
+      sub1 = Chasqui::Subscriber.new 'channel', 'queue', FakeWorker1
+      sub2 = Chasqui::Subscriber.new 'channel', 'queue', FakeWorker2
+
+      subscriptions.register sub1
+      subscriptions.register sub2
+      expect(subscriptions.find 'channel', 'queue').to eq([sub1, sub2])
+
+      expect_any_instance_of(FakeQueueAdapter).to receive(:unbind).with(sub1)
+      expect_any_instance_of(FakeQueueAdapter).to receive(:unbind).with(sub2)
+
+      Chasqui.unsubscribe('channel', 'queue')
+      expect(subscriptions.find 'channel', 'queue').to be_empty
+    end
+
+    it 'unsubscribes a single worker' do
+      sub1 = Chasqui::Subscriber.new 'channel', 'queue', FakeWorker1
+      sub2 = Chasqui::Subscriber.new 'channel', 'queue', FakeWorker2
+
+      subscriptions.register sub1
+      subscriptions.register sub2
+      expect(subscriptions.find 'channel', 'queue').to eq([sub1, sub2])
+
+      expect_any_instance_of(FakeQueueAdapter).to receive(:unbind).with(sub1)
+
+      Chasqui.unsubscribe('channel', 'queue', FakeWorker1)
+      expect(subscriptions.find 'channel', 'queue').to eq([sub2])
+    end
+  end
 end

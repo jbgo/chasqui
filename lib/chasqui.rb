@@ -95,6 +95,28 @@ module Chasqui
       @subscriptions ||= Subscriptions.new build_queue_adapter
     end
 
+    # Unsubscribe workers from a channel.
+    #
+    # When you unsubscribe from a channel, the broker will stop placing jobs on
+    # the worker queue. When only given +channel+ and +queue+ arguments,
+    # +#unsubscribe+ will unsubscribe all workers using that channel and queue.
+    # When the additional +worker+ argument is given, Chasqui will only
+    # unsubscribe the given worker.
+    #
+    # @param channel [String] the channel name
+    # @param queue [String] the queue name
+    # @param worker [.perform,#perform,#call] the worker class or proc for a
+    #   a currently subscribed worker
+    def unsubscribe(channel, queue, worker=nil)
+      subscribers = if worker
+                      [Subscriber.new(channel, queue, worker)]
+                    else
+                      subscriptions.find channel, queue
+                    end
+
+      subscribers.each { |sub| subscriptions.unregister sub }
+    end
+
     private
 
     def build_event(channel, *args)
