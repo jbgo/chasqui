@@ -86,17 +86,6 @@ remaining arguments are the same arguments you passed to `Chasqui.publish`.
 The above code tells Chasqui to place events published to the `order.purchased`
 channel on `PurchaseOrderWorker`'s queue.
 
-Because many applications will share the same Redis database, you should
-consider prefixing your queue names with a unique identifier for your
-application.
-
-    Chasqui.subscribe queue_name_prefix: 'app_id' do
-      on 'order.purchased', PurchasedOrderWorker
-    end
-
-Now the `PurchasedOrderWorker` will pull jobs from the `app_id:pubsub` queue
-instead of the `pubsub` queue.
-
 You can also use a callable object instead of a worker class to handle events.
 
     Chasqui.subscribe queue: 'app_id:pubsub' do

@@ -34,7 +34,7 @@ shared_examples 'a subscription builder' do |worker|
         expect(subscriber.queue).to eq(full_queue_name)
       end
 
-      builder.on channel, worker, queue_name_prefix: 'app_id'
+      builder.on channel, worker, queue_prefix: 'app_id'
 
       expect(queue_name(worker)).to eq(full_queue_name)
     end
@@ -58,7 +58,7 @@ shared_examples 'a subscription builder' do |worker|
         expect(subscriber.queue).to eq('prefix:other:queue')
       end
 
-      builder.on channel, worker, queue: 'other:queue', queue_name_prefix: 'prefix'
+      builder.on channel, worker, queue: 'other:queue', queue_prefix: 'prefix'
 
       expect(queue_name(worker)).to eq('prefix:other:queue')
     end
@@ -79,12 +79,12 @@ shared_examples 'a subscription builder' do |worker|
         expect_worker_to_support_backend(worker)
       end
 
-      builder.on channel, ->(event, x) { x + x }, queue_name_prefix: 'app_id'
+      builder.on channel, ->(event, x) { x + x }, queue_prefix: 'app_id'
     end
 
     context 'default options' do
       let(:builder) do
-        described_class.new subscriptions, queue_name_prefix: 'unique', queue: 'low-priority'
+        described_class.new subscriptions, queue_prefix: 'unique', queue: 'low-priority'
       end
 
       it 'uses options supplied during initialization when not supplied to #on' do

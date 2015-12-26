@@ -38,7 +38,7 @@ module Chasqui
     # @option options [String] :queue the worker queue.
     #   When given, this option will override the queue defined by the worker
     #   class. This option is recommended when using a proc as a worker.
-    # @option options [String] :queue_name_prefix prefix for queue.
+    # @option options [String] :queue_prefix prefix for queue.
     #   When supplied, the value of this option is prepended to the queue name.
     #   Use this option to namespace your queues in order to prevent collisions
     #   with queues from other applicaitons sharing the same Redis database.
@@ -100,7 +100,7 @@ module Chasqui
 
     def full_queue_name(worker, options={})
       queue = options.fetch :queue, get_queue_name(worker)
-      prefix = options[:queue_name_prefix]
+      prefix = options[:queue_prefix]
 
       prefix ? "#{prefix}:#{queue}" : queue
     end
