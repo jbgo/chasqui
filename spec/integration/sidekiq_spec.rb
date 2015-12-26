@@ -3,7 +3,7 @@ require 'integration/pubsub_examples'
 
 if sidekiq_supported_ruby_version?
   describe "sidekiq integration", integration: true do
-    include_examples 'pubsub', :sidekiq, :start_sidekiq_workers
+    include_examples 'pubsub', :start_sidekiq_workers
 
     def start_sidekiq_workers
       @pids << fork do

@@ -1,6 +1,6 @@
 require 'securerandom'
 
-class Chasqui::MultiBroker < Chasqui::Broker
+class Chasqui::RedisBroker < Chasqui::Broker
 
   def forward_event
     event = receive or return
@@ -17,16 +17,16 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def in_progress_queue
-    with_namespace inbox, 'in_progress'
+    with_namespace inbox_queue, 'in_progress'
   end
 
-  def inbox_queue
-    with_namespace inbox
+  def namespaced_inbox_queue
+    with_namespace inbox_queue
   end
 
-  def build_job(queue, event)
+  def build_job(queue, job_class, event)
     {
-      class: "Chasqui::#{Chasqui.subscriber_class_name(queue)}",
+      class: job_class,
       args: [event],
       queue: 'my-queue',
       jid: SecureRandom.hex(12),
@@ -57,7 +57,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def dequeue
-    redis.brpoplpush(inbox_queue, in_progress_queue, timeout: config.broker_poll_interval).tap do |event|
+    redis.brpoplpush(namespaced_inbox_queue, in_progress_queue, timeout: config.broker_poll_interval).tap do |event|
       if event.nil?
         logger.debug "reached timeout for broker poll interval: #{config.broker_poll_interval} seconds"
       end
@@ -65,8 +65,8 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def dispatch(event, subscription_id)
-    backend, queue = subscription_id.split('/', 2)
-    job = build_job queue, event
+    backend, job_class, queue = subscription_id.split('/', 3)
+    job = build_job queue, job_class, event
 
     logger.debug "dispatching event queue=#{queue} backend=#{backend} job=#{job}"
 
@@ -79,7 +79,7 @@ class Chasqui::MultiBroker < Chasqui::Broker
   end
 
   def subscriptions_for(event)
-    subscription_key = Chasqui.subscription_key event['channel']
+    subscription_key = "subscriptions:#{event['channel']}"
     redis.smembers with_namespace(subscription_key)
   end
 

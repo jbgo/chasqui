@@ -3,140 +3,159 @@
 
 # Chasqui
 
-Chasqui is a simple, lightweight, persistent implementation of the publish-subscribe (pub-sub)
-messaging pattern for service oriented architectures.
-
-Chasqui delivers messages to subscribers in a Resque-compatible format. If you are already
-using Resque and/or Sidekiq, Chasqui will make a wonderful companion to your architecture.
+Chasqui adds persistent
+[publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+(pub-sub) messaging capabilities to Sidekiq and Resque workers.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add this line to your application's Gemfile
 
     gem 'chasqui'
 
-And then execute:
+then execute
 
     $ bundle
 
-Or install it yourself as:
+or install it yourself as
 
     $ gem install chasqui
 
 ## Dependencies
 
-Chasqui uses Redis to queue events and manage subscriptions. You can install
-Redis with your favorite package manager, such as homebrew, yum, or apt, or if
-you prefer, you can run `vagrant up` to run Redis in a virtual machine.
+Chasqui uses [Redis](http://redis.io/) to store events and manage
+subscriptions. You can install Redis with your favorite package manager, such
+as homebrew, yum, or apt, or if you prefer, you can run `vagrant up` to run
+Redis in a virtual machine. If you already have Resque or Sidekiq working, then
+you already have everything you need to get started with Chasqui.
 
 ## Quick Start
 
-Chasqui consistents of two components - a client and a broker. The broker's
-responsibility is to forward published events to registered subscribers. The
-client can both publish events and register subscribers.
-
 ### Start the broker
 
-    chasqui -r redis://localhost:6379/0 -q my-app
+    chasqui -r redis://localhost:6379/0
 
-Your broker must use the same Redis connection as your Sidekiq (or Resque)
-workers. For a list of available broker options, see `chasqui --help`.
+The broker is a ruby daemon that listens for events (messages) published to
+channels (topics) and forwards those events to registered subscribers.  In
+order to work, your broker must use the same Redis database as your
+Sidekiq/Resque workers. For a list of available broker options, see `chasqui
+--help`.
 
-### Publish events
+### Publish an events
 
-Publishing events is simple.
+    Chasqui.publish 'order.purchased', user, order
 
-    # file: publisher.rb
-    require 'chasqui'
-    Chasqui.publish 'user.sign-up', 'Darth Vader'
-    Chasqui.publish 'user.cancel', 'Luke Skywalker', 'May the force be with you.'
+Publish an event to the `order.purchased` channel and include information
+about the user and order that triggered the event. Any arguments after the
+channel name must be JSON-serializable.
 
-Be sure to run the publisher, broker, and subscribers in separate terminal
-windows.
+### Define workers to handle events
 
-    ruby publisher.rb
+With Sidekiq
+
+    class OrderPublishWorker
+      include Sidekiq::Worker
+      sidekiq_options queue: 'pubsub' # you can use any options sidekiq supports
+
+      def perform(event, user, order_details)
+        # custom logic to handle the event
+      end
+    end
+
+With Resque
+
+    class OrderPublishWorker
+      @queue = 'pubsub' # choice of queue name is up to you
+
+      def self.perform(event, user, order_details)
+        # custom logic to handle the event
+      end
+    end
+
+The `OrderPublishWorker` is a normal Sidekiq (or Resque) worker. The first
+argument to the perform method is a [Chasqui::Event](#) object, and the
+remaining arguments are the same arguments you passed to `Chasqui.publish`.
 
 ### Subscribe to events
 
-Subscribing to events is also simple. The following example tells Chasqui to
-forward events to this subscriber's `my-app` queue. Chasqui will detect whether
-you are using Sidekiq or Resque and generate an appropriate worker class for you.
-Within the subscriber block, you use the `on(event_name)` method to register blocks
-of code to handle that event.
-
-    # file: subscriber1.rb
-    require 'chasqui'
-
-    Chasqui.subscribe queue: 'my-app' do
-
-      on 'user.sign-up' do |user_id|
-        # do something when the user signs up
-      end
-
-      on 'user.cancel' do |user_id, reason|
-        # do something else when user cancels
-      end
-
+    Chasqui.subscribe do
+      on 'order.purchased', PurchasedOrderWorker
+      # ...more subscriptions
     end
 
-You can have as many subscribers as you like, but __each subscriber must have
-its own unique queue name__.
+The above code tells Chasqui to place events published to the `order.purchased`
+channel on `PurchaseOrderWorker`'s queue.
 
-### Running Sidekiq subscribers
+You can also use a callable object instead of a worker class to handle events.
 
-Here is how you can run the subscriber as a sidekiq worker:
-
-    sidekiq -r subscriber.rb
-
-For more information on running Sidekiq, please refer to the [Sidekiq documentation](https://github.com/mperham/sidekiq).
-
-### Running Resque subscribers
-
-To run the resque worker, you first need to create a Rakefile.
-
-    # Rakefile
-    require 'resque'
-    require 'resque/tasks'
-
-    task 'resque:setup' => ['chasqui:subscriber']
-
-    namespace :chasqui do
-      task :subscriber do
-        require './subscriber.rb'
-      end
+    Chasqui.subscribe queue: 'app_id:pubsub' do
+      on 'order.purchased', ->(event, user, order) {
+        logger.info event.to_json
+      }
     end
 
-Then you can run the resque worker to start processing events.
+### Running Subscribers
 
-    rake resque:work
+With Sidekiq
 
-For more information on running Resque workers, please refer to the [resque documentation](https://github.com/resque/resque).
+    bundle exec sidekiq -q app_id:pubsub
+
+With Resque
+
+    QUEUES=app_id:pubsub bundle exec rake resque:work
+
+Subscribers are normal Sidekiq or Resque workers, and can take advantage of all
+available features and plugins.  Please refer to the documentation for those
+libraries for detailed instructions.
+
+* [Sidekiq documentation](https://github.com/mperham/sidekiq)
+* [Resque documentation](https://github.com/resque/resque)
+
+### Configuration
+
+    Chasqui.configure do |c|
+      c.redis = 'redis://my-redis.example.com:6379'
+      ...
+    end
+
+For a full list of configuration options, see the
+[Chasqui::Config documentation](#).
+
+## Unsubscribing
+
+    Chasqui.unsubscribe 'order.purchased', 'app_id:pubsub'
+
+If you no longer wish to handle events for a channel, you should unsubscribe
+the worker so that the Chasqui broker stops placing jobs on that worker's
+queue.
 
 ## Why Chasqui?
 
-* Reduces coupling between applications.
-* Simple to learn and use.
-* Integrates with the popular Sidekiq and Resque background worker libraries.
-* Queues events for registered subscribers even if a subscriber is unavailable.
-* Subscribers can benefit from Sidekiq's built-in retry functionality for failed jobs.
+* Persistent - events don't get lost when the broker restarts or your workers
+  are not running.
+* Integrates with the proven Sidekiq and Resque background worker libraries.
+* Reduces service coupling - publishers have no knowledge of subscribers and
+  subscribers have no knowledge of publishers.
 
 ## Limitations
 
-In order for Chasqui to work properly, the publisher, broker, and all
-subscribers must connect to the same Redis database. Chasqui is intentionally
-simple and may not have all of the features you would expect from a messaging
-system. If Chasqui is missing a feature that you think it should have, please
-consider [opening a GitHub issue](https://github.com/jbgo/chasqui/issues/new) to
-discuss your feature proposal. 
+Chasqui requires that the publisher, broker, and all subscribers must connect
+to the same Redis database. If your applications use separate Redis databases,
+they will not be able to communicate with each other using Chasqui.
 
 ## Contributing
 
-* For new functionality, please open an issue for discussion before creating a pull request.
-* For bug fixes, you are welcome to create a pull request without first opening an issue.
+* For feature requests, please [open an issue](https://github.com/jbgo/chasqui/issues/new)
+  to discuss the proposed feature.
+* For bug fixes, you are welcome to create a pull request without first opening
+  an issue.
 * Except for documentation changes, tests are required with all pull requests.
-* Please be polite and respectful when discussing the project with maintainers and your fellow contributors.
+* Please be polite and respectful when discussing the project with maintainers
+  and your fellow contributors.
 
 ## Code of Conduct
 
-If you are unsure whether or not your communication may be inappropriate, please consult the [Chasqui Code of Conduct](code-of-conduct.md).
-If you even suspect harassment or abuse, please report it to the email address listed in the Code of Conduct.
+If you are unsure whether or not your communication is appropriate for Chasqui
+please consult the [Chasqui Code of Conduct](code-of-conduct.md).  If you
+suspect harassment or abuse, please report it to the email address listed in
+the Code of Conduct.

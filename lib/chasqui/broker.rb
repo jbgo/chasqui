@@ -4,7 +4,7 @@ class Chasqui::Broker
   attr_reader :config, :redis, :redis_namespace
 
   extend Forwardable
-  def_delegators :@config, :inbox, :logger
+  def_delegators :@config, :inbox_queue, :logger
 
   ShutdownSignals = %w(INT QUIT ABRT TERM).freeze
 
@@ -24,7 +24,7 @@ class Chasqui::Broker
     install_signal_handlers
 
     logger.info "broker started with pid #{Process.pid}"
-    logger.info "configured to fetch events from #{inbox} on #{redis.inspect}"
+    logger.info "configured to fetch events from #{inbox_queue} on #{redis.inspect}"
 
     until_shutdown_requested { forward_event }
   end
@@ -35,7 +35,7 @@ class Chasqui::Broker
 
   class << self
     def start
-      Chasqui::MultiBroker.new.start
+      Chasqui::RedisBroker.new.start
     end
   end
 

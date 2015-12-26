@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'integration/pubsub_examples'
 
 describe "resque integration", integration: true do
-  include_examples 'pubsub', :resque, :start_resque_workers
+  include_examples 'pubsub', :start_resque_workers
 
   def start_resque_workers
     @subscriber_queues.each do |queue|

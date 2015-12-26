@@ -33,7 +33,7 @@ describe Chasqui::CLI do
         expect(cli.inbox_queue).to eq('inbox2')
 
         cli.configure
-        expect(Chasqui.inbox).to eq('inbox2')
+        expect(Chasqui.inbox_queue).to eq('inbox2')
     end
 
     it 'enables verbose mode (debug logging)' do

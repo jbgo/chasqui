@@ -7,78 +7,122 @@ require 'redis-namespace'
 require "chasqui/version"
 require "chasqui/config"
 require "chasqui/broker"
-require "chasqui/multi_broker"
+require "chasqui/brokers/redis_broker"
+require "chasqui/queue_adapter"
+require "chasqui/queue_adapter/redis_queue_adapter"
 require "chasqui/subscriber"
-require "chasqui/subscription"
-require "chasqui/workers/worker"
-require "chasqui/workers/resque_worker"
-require "chasqui/workers/sidekiq_worker"
+require "chasqui/subscriptions"
+require "chasqui/subscription_builder"
+require "chasqui/subscription_builder/resque_subscription_builder"
+require "chasqui/subscription_builder/sidekiq_subscription_builder"
 
+# A persistent implementation of the publish-subscribe messaging pattern for
+# Resque and Sidekiq workers.
 module Chasqui
+
   class << self
     extend Forwardable
-    def_delegators :config, :redis, :channel, :inbox, :inbox_queue, :logger
+    def_delegators :config, *CONFIG_SETTINGS
 
+    # Yields an object for configuring Chasqui.
+    #
+    # @example
+    #   Chasqui.configure do |c|
+    #     c.redis = 'redis://my-redis.example.com:6379'
+    #     ...
+    #   end
+    #
+    # @see Config See Chasqui::Config for a full list of configuration options.
+    #
+    # @yieldparam config [Config]
     def configure(&block)
-      @config ||= Config.new
-      yield @config
+      yield config
     end
 
+    # @visibility private
+    #
+    # Returns the Chasqui configuration object.
+    #
+    # @see Config See Chasqui::Config for a full list of configuration options.
+    #
+    # @return [Config]
     def config
       @config ||= Config.new
     end
 
-    def publish(event, *args)
-      redis.lpush inbox_queue, build_payload(event, *args).to_json
+    # Publish an event to a channel.
+    #
+    # @param channel [String] the channel name
+    # @param args [Array<#to_json>] an array of JSON serializable objects that
+    #   comprise the event's payload.
+    def publish(channel, *args)
+      redis.lpush inbox_queue, build_event(channel, *args).to_json
     end
 
-    def subscribe(options={}, &block)
-      queue = options.fetch :queue
-      channel = options.fetch :channel, config.channel
-
-      create_subscription(queue, channel).tap do |subscription|
-        subscription.subscriber.evaluate(&block) if block_given?
-        redis.sadd subscription_key(channel), subscription.subscription_id
-      end
+    # Subscribe workers to channels.
+    #
+    #     Chasqui.subscribe(queue: 'high-priority') do
+    #       on 'channel1', Worker1
+    #       on 'channel2', Worker2
+    #       on 'channel3', ->(event) { ... }, queue: 'low-priority'
+    #       ...
+    #     end
+    #
+    # The +.subscribe+ method creates a context for registering workers to
+    # receive events for specified channels. Within a subscribe block you make
+    # calls to the {SubscriptionBuilder#on #on} method to create subscriptions.
+    #
+    # {SubscriptionBuilder#on #on} expects a channel name as the first argument
+    # and either a Resque/Sidekiq worker as the second argument or a callable
+    # object, such as a proc, lambda, or any object that responds to +#call+.
+    #
+    # @see SubscriptionBuilder#on
+    #
+    # @param [Hash] options default options for calls to +#on+. The defaults
+    #   will be overriden by options supplied to the +#on+ method directly.
+    #   See {Chasqui::SubscriptionBuilder#on} for available options.
+    def subscribe(options={})
+      builder = SubscriptionBuilder.builder(subscriptions, options)
+      builder.instance_eval &Proc.new
     end
 
-    def unsubscribe(channel, options={}, &block)
-      queue = options.fetch :queue
-      subscription = subscriptions[queue.to_s]
-
-      if subscription
-        redis.srem subscription_key(channel), subscription.subscription_id
-        subscription.subscription_id
-      end
+    # @visibility private
+    #
+    # Returns the registered subscriptions.
+    #
+    # @return [Subscriptions]
+    def subscriptions
+      @subscriptions ||= Subscriptions.new build_queue_adapter
     end
 
-    def subscription(queue)
-      subscriptions[queue.to_s]
-    end
+    # Unsubscribe workers from a channel.
+    #
+    # When you unsubscribe from a channel, the broker will stop placing jobs on
+    # the worker queue. When only given +channel+ and +queue+ arguments,
+    # +#unsubscribe+ will unsubscribe all workers using that channel and queue.
+    # When the additional +worker+ argument is given, Chasqui will only
+    # unsubscribe the given worker.
+    #
+    # @param channel [String] the channel name
+    # @param queue [String] the queue name
+    # @param worker [.perform,#perform,#call] the worker class or proc for a
+    #   a currently subscribed worker
+    def unsubscribe(channel, queue, worker=nil)
+      subscribers = if worker
+                      [Subscriber.new(channel, queue, worker)]
+                    else
+                      subscriptions.find channel, queue
+                    end
 
-    def subscriber_class_name(queue)
-      queue_name_constant = queue.split(':').last.gsub(/[^\w]/, '_')
-      "Subscriber__#{queue_name_constant}".to_sym
-    end
-
-    def subscription_key(channel)
-      "subscriptions:#{channel}"
+      subscribers.each { |sub| subscriptions.unregister sub }
     end
 
     private
 
-    def create_subscription(queue, channel)
-      subscriptions[queue.to_s] ||= Subscription.new queue, channel
-    end
-
-    def subscriptions
-      @subscriptions ||= {}
-    end
-
-    def build_payload(event, *args)
+    def build_event(channel, *args)
       opts = extract_job_options!(*args)
 
-      payload = { event: event, channel: channel, data: args }
+      payload = { channel: channel, payload: args }
       payload[:retry] = fetch_option(opts, :retry, true) || false
       payload[:created_at] = Time.now.to_f.to_s
 
@@ -92,6 +136,10 @@ module Chasqui
 
     def fetch_option(opts, key, default=nil)
       opts.fetch key.to_sym, opts.fetch(key.to_s, default)
+    end
+
+    def build_queue_adapter
+      queue_adapter.new
     end
   end
 end
