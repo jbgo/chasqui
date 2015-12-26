@@ -71,7 +71,13 @@ class Chasqui::CLI
       end
     end
 
-    @parser.parse!(argv)
+    begin
+      @parser.parse!(argv)
+    rescue OptionParser::InvalidOption => ex
+      puts "Error: #{ex.message}\n\n#{@parser.help}"
+      exit 1
+    end
+
     @options = OpenStruct.new opts
   end
 
