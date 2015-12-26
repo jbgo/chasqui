@@ -119,7 +119,7 @@ libraries for detailed instructions.
     end
 
 For a full list of configuration options, see the
-[Chasqui::Config documentation](#).
+[Chasqui::Config documentation](http://www.rubydoc.info/gems/chasqui/Chasqui/Config).
 
 ## Unsubscribing
 
