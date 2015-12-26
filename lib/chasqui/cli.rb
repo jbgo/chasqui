@@ -44,7 +44,7 @@ class Chasqui::CLI
     opts = {}
 
     @parser = OptionParser.new do |o|
-      o.banner = "Usage: #{argv[0]} [options]"
+      o.banner = "Usage: chasqui [options]"
 
       o.on('-f', '--logfile PATH', 'log file path') do |arg|
         opts[:logfile] = arg
